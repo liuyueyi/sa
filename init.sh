@@ -23,8 +23,14 @@ case "$1" in
     fi
 	;;
 	
+	help)
+	if [ -x ./kmd ] ; then
+    ./kmd $0 -h
+    fi
+    ;;
+	
     *)
-    echo "usage: $0 { start | stop | restart }" >&2
+    echo "usage: $0 { start | stop | restart | help}" >&2
     exit 1
     ;;
 

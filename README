@@ -48,11 +48,23 @@ Base64 Process:
 
  
 CONFIG FILE FORMAT
-------------------- 
+------------------ 
 Config file name should be started with encryption method such as "rsa_xxx" or "sm_xxx", the file name tell you which encrypt method to use!
 Config file saved all the id, key and uuid information. Each line contained valied id, key and uuid. One id can match many uuid, however one uuid can only match one id. The line start with '#' is Comment lines, you can ignore it.
 
 	-id: the volume key's unique id
 	-key: the cipher of Symmetric key	
 	-uuid: the volume's unique id
+	
+
+Server Command
+--------------
+  you can either use init.sh to start/stop/restart the server, or directly input ./kmd under terminal to start the server.The kmd.pid file saved the process pid of the server, so if you want to kill the server process, except use init.sh script, you can also directly input(kill -9 `cat kmd.pid`) to kill the server
+  
+  for example:
+    start server:  ./init.sh start
+    kill server: ./init.sh kill
+    restart server: ./init.sh restart
+
+	you can get more by input ./init.sh help
 

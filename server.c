@@ -73,9 +73,12 @@ void send_volume_key(int sockfd, const struct kmd_option *x)
 		exit(1);
 	}
 	
+	flock(fileno(f), LOCK_SH);
+
 	while(fgets(buffer, LINE_MAX, f))
 		send(sockfd, buffer, strlen(buffer), 0);
-		
+
+	flock(fileno(f), LOCK_UN);
 	fclose(f);	
 }
 

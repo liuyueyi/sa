@@ -57,7 +57,7 @@ Config file saved all the id, key and uuid information. Each line contained vali
 	-uuid: the volume's unique id
 	
 
-Server Command
+SERVER COMMAND
 --------------
   you can either use init.sh to start/stop/restart the server, or directly input ./kmd under terminal to start the server.The kmd.pid file saved the process pid of the server, so if you want to kill the server process, except use init.sh script, you can also directly input(kill -9 `cat kmd.pid`) to kill the server
   

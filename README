@@ -1,0 +1,48 @@
+
+KMC SA 1.0.0 28 Aug 2014
+ 
+INSTALLATION
+------------
+This project used RSA and BASE64 function for Asymmetric encryption, so to install this package under a Unix derivative, you need install openssl1.0.1h first. Download install package from website(http://www.openssl.org/), then install openssl.
+ 
+ If you want to just get on with it, do:
+
+  $ make
+
+
+OPENSSL DESCRYPTION
+------------------- 
+RSA Asymmetric encryption:
+ 	init rsa: 			RSA_new
+ 	init rsa from file:	PEM_read_RSAPrivateKey, PEM_read_RSA_PUBKEY
+ 	set rsa key: 		RSA_general_key, BN_bin2bn
+ 	verify rsa key: 	RSA_check_key
+ 	encrypt: 			RSA_public_encrypt, RSA_private_encrypt
+	decrypt: 			RSA_private_decrypt, RSA_public_decrypt
+ 	sign: 				RSA_sign
+ 	verify: 			RSA_verify
+ 	free RSA: 			RSA_free
+
+ Decrypt Process:
+	rsa = PEM_read_RSA_PUBKEY(public_key_pathname, NULL, NULL, NULL ) 
+	int ret = RSA_private_decrypt(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding); // if t >= 0, decrypt succeed
+	RSA_free(rsa)
+	
+
+BASE64:
+	use bio to implements base64
+	init BIO:		BIO *b64 = BIO_new(BIO_f_base64());
+	no newline:		BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+	base 64:		BIO_write(b64, char *input, strlen(input));
+	flush cache:	BIO_flush(b64);
+	get result:		BIO_get_mem_ptr(b64, &bptr); //*bptr is the result
+	
+Base64 Process:
+	 b64 = BIO_new(BIO_f_base64());
+     bio = BIO_new_fp(stdout, BIO_NOCLOSE);
+     bio = BIO_push(b64, bio);
+     BIO_write(bio, char *input, strlen(input));
+     BIO_flush(bio);
+	 BIO_get_mem_ptr(b64, &bptr);
+     BIO_free_all(bio);
+ 

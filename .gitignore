@@ -1,0 +1,8 @@
+!.gitignore
+.gitignore~
+*~
+*.o
+kmd
+kmc
+test.*
+*.tm

@@ -3,7 +3,7 @@ KMC SA 1.0.0 28 Aug 2014
  
 INSTALLATION
 ------------
-This project used RSA and BASE64 function for Asymmetric encryption, so to install this package under a Unix derivative, you need install openssl1.0.1h first. Download install package from website(http://www.openssl.org/), then install openssl.
+This project used RSA and BASE64 function for Asymmetric encryption, so in order to install this package under a Unix derivative, you need install openssl1.0.1h first. Download install package from website(http://www.openssl.org/), then install openssl.
  
  If you want to just get on with it, do:
 
@@ -45,4 +45,14 @@ Base64 Process:
      BIO_flush(bio);
 	 BIO_get_mem_ptr(b64, &bptr);
      BIO_free_all(bio);
+
  
+CONFIG FILE FORMAT
+------------------- 
+Config file name should be started with encryption method such as "rsa_xxx" or "sm_xxx", the file name tell you which encrypt method to use!
+Config file saved all the id, key and uuid information. Each line contained valied id, key and uuid. One id can match many uuid, however one uuid can only match one id. The line start with '#' is Comment lines, you can ignore it.
+
+	-id: the volume key's unique id
+	-key: the cipher of Symmetric key	
+	-uuid: the volume's unique id
+

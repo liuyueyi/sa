@@ -15,7 +15,7 @@ bool verify_client(int sockfd)
 	
 	srand((int)time(0));
 	int n = rand() % 1000;
-	sprintf(buffer, "%d", n);
+	sprintf(buffer, "%d", n); // generate a rand num
 	
 	if(send(sockfd, buffer, strlen(buffer), 0) != strlen(buffer))
 		return false;
@@ -88,6 +88,7 @@ void server_process(int sockfd, const struct kmd_option *x)
 {
 	int data_len = 0;
 	char buffer[1];
+
 	// receive and judge the client request
 	data_len = recv(sockfd, buffer, 1, 0); 
 	if(data_len < 0)
@@ -151,6 +152,12 @@ void init_server(const struct kmd_option *x)
 			continue;
 		}
 		
+		if(strlen(x->ip) > 0 && strcmp(x->ip, inet_ntoa(client_addr.sin_addr)) != 0)
+		{ // if restrict the connected ip and the client ip is not the valid ip, reject
+			close(clientfd);
+			exit(0);
+		}
+
 		if(fork() == 0)
 		{
 			server_process(clientfd, x);

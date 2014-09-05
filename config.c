@@ -219,6 +219,16 @@ int print_key(const char *line, size_t len, const void *priv,
 		exit(-1);
 	}
 
+	/*
+	 * if vk is binary format and based before being encrypted
+	 * 		you should debase it first, and print the hexadecimal format
+	char volume_key[20];
+	debase64(result, strlen(result), volume_key, 20);
+	int i = 0;
+	while(i < strlen(volume_key))
+		printf("%02x", volume_key[i++]);
+	*/
+
 	printf("%s\n", result);
 	return 1;
 }

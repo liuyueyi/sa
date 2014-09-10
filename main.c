@@ -135,8 +135,8 @@ int do_list(const struct kmc_option *x)
 		if (x->uuid && strlen(x->uuid_content) != 0)
 			return do_list_key(x->config_pathname, x->uuid_content, en);
 
-		fprintf(stderr, "input correct id or uuid\n");
-		return -1;
+		fprintf(stderr, "invalid command, please input correct id or uuid\n");
+		exit(-1);
 	}
 
 	if (strlen(x->id_content) != 0)
@@ -145,14 +145,15 @@ int do_list(const struct kmc_option *x)
 			return do_list_id_uuid(x->config_pathname, x->id_content);
 		else if (strlen(x->uuid_content) == 0)
 			return do_list_uuid(x->config_pathname, x->id_content);
+
+		fprintf(stderr,
+				"invalid command, choose one option in {-i=xxx, -u=xxx}\n");
+		exit(-1);
 	}
 	else if (strlen(x->uuid_content) != 0)
 		return do_list_id(x->config_pathname, x->uuid_content);
 	else
 		return do_list_line(x->config_pathname);
-
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
 }
 
 void rand_temp_pathname(const char *old_pathname, char *pathname, size_t len)
@@ -175,31 +176,44 @@ void rand_temp_pathname(const char *old_pathname, char *pathname, size_t len)
 
 int do_set(const struct kmc_option *x)
 {
-	char temp_pathname[200];
-	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
+	char temp_pathname[PATH_MAX];
+	rand_temp_pathname(x->config_pathname, temp_pathname, PATH_MAX);
+	if (x->plain_key)
+	{
+		fprintf(stderr, "-s -k can't be used together\n");
+		exit(-1);
+	}
 
+	// only if id and uuid exist and not empty, then set
 	if (strlen(x->id_content) != 0 && strlen(x->uuid_content) != 0)
 		return do_update_uuid(x->config_pathname, temp_pathname, x->id_content,
 				x->uuid_content);
 
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
+	fprintf(stderr, "invalid command, both option -i=xxx -u=xxx are needed\n");
+	exit(-1);
 }
 
 int do_remove(const struct kmc_option *x)
 {
-	char temp_pathname[200];
-	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
+	char temp_pathname[PATH_MAX];
+	rand_temp_pathname(x->config_pathname, temp_pathname, PATH_MAX);
+	if (x->plain_key)
+	{
+		fprintf(stderr, "-s -k can't be used together\n");
+		exit(-1);
+	}
 
+	// remove volume key
 	if (strlen(x->id_content) != 0 && !x->uuid)
 		return do_remove_id(x->config_pathname, temp_pathname, x->id_content);
 
+	// remove volume key relation
 	if (!x->id && strlen(x->uuid_content) != 0)
 		return do_remove_uuid(x->config_pathname, temp_pathname,
 				x->uuid_content);
 
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
+	fprintf(stderr, "invalid command, choose one option in {-i=xxx, -u=xxx}\n");
+	exit(-1);
 }
 
 int do_command(const struct kmc_option *x)

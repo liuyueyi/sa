@@ -21,6 +21,9 @@ const char *get_column(char *line, int col)
 	return ptr;
 }
 
+/**
+ * judge if the priv is the valid column of line
+ */
 bool is_valid_column(const char *line, size_t len, const char *priv)
 {
 	char *ptr = NULL;
@@ -179,15 +182,7 @@ int print_id_uuid(const char *line, size_t len, const void *priv,
 	if (!is_valid_column(line, len, (const char *) priv))
 		return 0;
 
-	char temp[LINE_MAX];
-	strcpy(temp, line);
-	printf("%s ", get_column(temp, COL_ID));
-	strcpy(temp, line);
-	const char *uuid = get_column(temp, COL_UUID);
-	if (uuid)
-		printf("%s\n", uuid);
-	else
-		printf("\n");
+	print_line(line, len, priv, en);
 	return 1;
 }
 
@@ -226,7 +221,7 @@ int print_key(const char *line, size_t len, const void *priv,
 	debase64(result, strlen(result), volume_key, 20);
 	int i = 0;
 	while(i < strlen(volume_key))
-		printf("%02x", volume_key[i++]);
+		printf("%02x", (unsigned char)volume_key[i++]);
 	*/
 
 	printf("%s\n", result);

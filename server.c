@@ -73,7 +73,7 @@ void send_volume_key(int sockfd, const struct kmd_option *x)
 		exit(1);
 	}
 	
-	flock(fileno(f), LOCK_SH);
+	flock(fileno(f), LOCK_SH); // if file locked, then waited until it was unlocked
 
 	while(fgets(buffer, LINE_MAX, f))
 		send(sockfd, buffer, strlen(buffer), 0);
@@ -152,8 +152,9 @@ void init_server(const struct kmd_option *x)
 			continue;
 		}
 		
+		// if restrict the connected ip and the client ip is not the valid ip, then reject
 		if(strlen(x->ip) > 0 && strcmp(x->ip, inet_ntoa(client_addr.sin_addr)) != 0)
-		{ // if restrict the connected ip and the client ip is not the valid ip, reject
+		{
 			close(clientfd);
 			exit(0);
 		}

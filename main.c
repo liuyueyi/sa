@@ -31,7 +31,7 @@ struct option const long_options[] =
 struct kmc_option
 {
 	short mode;
-	short plain_key;
+	bool plain_key;
 	bool id;
 	bool uuid;
 

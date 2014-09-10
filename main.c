@@ -61,10 +61,184 @@ void kmc_option_init(struct kmc_option *x)
 	strcpy(x->config_pathname, CONFIG_FILENAME);
 }
 
+inline int show_command_error()
+{
+	fprintf(stderr, "selected one command in -l -r -s\n!");
+	exit(-1);
+}
+
+/**
+ * get method form pathname
+ * such as:
+ * 		pathname = /home/pc/workspace/rsa_key.conf
+ * 		filename = rsa_key.conf
+ * 		method = rsa
+ *
+ */
+int get_method_from_config_pathname(const char *pathname, char *method,
+		size_t len)
+{
+	int i = strlen(pathname) - 1;
+	int l_index = 0, r_index = -1;
+	while (i >= 0)
+	{
+		if (pathname[i] == '_')
+			r_index = i;
+		else if (pathname[i] == '/')
+		{
+			l_index = 1 + i;
+			break;
+		}
+		--i;
+	}
+
+	if (r_index <= 0 || r_index - l_index >= len)
+		return -1;
+
+	for (i = 0; l_index < r_index; i++, l_index++)
+		method[i] = pathname[l_index];
+	method[i] = '\0';
+
+	return 0;
+}
+
+struct encrypt_operations *init_encryption_method(const struct kmc_option *x)
+{
+	char method[NAME_MAX];
+	if (get_method_from_config_pathname(x->config_pathname, method, NAME_MAX)
+			< 0)
+	{
+		fprintf(stderr,
+				"%s configure filename error, get more by kmc --help.\n",
+				x->config_pathname);
+		exit(1);
+	}
+
+	struct encrypt_operations *en = set_encryption_method(method,
+			x->sk_pathname, x->pk_pathname);
+
+	if (NULL == en)
+	{
+		fprintf(stderr, "Init decrypt key error\n");
+		exit(1);
+	}
+	return en;
+}
+
+int do_list(const struct kmc_option *x)
+{
+	if (x->plain_key)
+	{
+		struct encrypt_operations *en = init_encryption_method(x);
+		if (x->id && strlen(x->id_content) != 0)
+			return do_list_key(x->config_pathname, x->id_content, en);
+		if (x->uuid && strlen(x->uuid_content) != 0)
+			return do_list_key(x->config_pathname, x->uuid_content, en);
+
+		fprintf(stderr, "input correct id or uuid\n");
+		return -1;
+	}
+
+	if (strlen(x->id_content) != 0)
+	{
+		if (!x->uuid)
+			return do_list_id_uuid(x->config_pathname, x->id_content);
+		else if (strlen(x->uuid_content) == 0)
+			return do_list_uuid(x->config_pathname, x->id_content);
+	}
+	else if (strlen(x->uuid_content) != 0)
+		return do_list_id(x->config_pathname, x->uuid_content);
+	else
+		return do_list_line(x->config_pathname);
+
+	fprintf(stderr, "invalid command, read more by help\n");
+	return -1;
+}
+
+void rand_temp_pathname(const char *old_pathname, char *pathname, size_t len)
+{
+
+	if (strlen(old_pathname) + 4 >= len)
+	{
+		fprintf(stderr, "%s pathname too long!\n", old_pathname);
+		exit(-1);
+	}
+
+	srand((int) time(0));
+	char buf[5];
+	sprintf(buf, "%d", rand() % 10000);
+	strcpy(pathname, old_pathname);
+	strcat(pathname, buf);
+	if (access(pathname, 0) == 0) // if temp file exist, generate another temp pathname
+		rand_temp_pathname(old_pathname, pathname, len);
+}
+
+int do_set(const struct kmc_option *x)
+{
+	char temp_pathname[200];
+	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
+
+	if (strlen(x->id_content) != 0 && strlen(x->uuid_content) != 0)
+		return do_update_uuid(x->config_pathname, temp_pathname, x->id_content,
+				x->uuid_content);
+
+	fprintf(stderr, "invalid command, read more by help\n");
+	return -1;
+}
+
+int do_remove(const struct kmc_option *x)
+{
+	char temp_pathname[200];
+	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
+
+	if (strlen(x->id_content) != 0 && !x->uuid)
+		return do_remove_id(x->config_pathname, temp_pathname, x->id_content);
+
+	if (!x->id && strlen(x->uuid_content) != 0)
+		return do_remove_uuid(x->config_pathname, temp_pathname,
+				x->uuid_content);
+
+	fprintf(stderr, "invalid command, read more by help\n");
+	return -1;
+}
+
+int do_command(const struct kmc_option *x)
+{
+	char method[NAME_MAX];
+	if (get_method_from_config_pathname(x->config_pathname, method, NAME_MAX)
+			< 0)
+	{
+		fprintf(stderr,
+				"%s configure filename error, get more by kmc --help.\n",
+				x->config_pathname);
+		exit(1);
+	}
+	set_encryption_method(method, x->sk_pathname, x->pk_pathname);
+
+	switch (x->mode)
+	{
+	case LIST_CMD:
+		do_list(x);
+		break;
+	case SET_CMD:
+		do_set(x);
+		break;
+	case REMOVE_CMD:
+		do_remove(x);
+		break;
+	default:
+		show_command_error();
+		exit(1);
+	}
+
+	return 0;
+}
+
 void do_help()
 {
 	printf(("Usage: kmc [OPTION]... \n"));
-	fputs(("\
+	fputs(
+			("\
 volume key and volume key relation operation interface.\n\
 \n\
 "),
@@ -155,12 +329,6 @@ Exit status:\n\
 			stdout);
 }
 
-inline int show_command_error()
-{
-	fprintf(stderr, "selected one command in -l -r -s\n!");
-	exit(-1);
-}
-
 int decode_switch(int argc, char **argv, struct kmc_option *x)
 {
 	int c;
@@ -239,150 +407,6 @@ int decode_switch(int argc, char **argv, struct kmc_option *x)
 	}
 
 	return optind;
-}
-
-int do_list(const struct kmc_option *x)
-{
-	if (x->plain_key)
-	{
-		struct encrypt_operations *en = set_encryption_method("rsa",
-				x->sk_pathname, x->pk_pathname);
-
-		if (x->id && strlen(x->id_content) != 0)
-			return do_list_key(x->config_pathname, x->id_content, en);
-		if (x->uuid && strlen(x->uuid_content) != 0)
-			return do_list_key(x->config_pathname, x->uuid_content, en);
-
-		fprintf(stderr, "input correct id or uuid\n");
-		return -1;
-	}
-
-	if (strlen(x->id_content) != 0)
-	{
-		if (!x->uuid)
-			return do_list_id_uuid(x->config_pathname, x->id_content);
-		else if (strlen(x->uuid_content) == 0)
-			return do_list_uuid(x->config_pathname, x->id_content);
-	}
-	else if (strlen(x->uuid_content) != 0)
-		return do_list_id(x->config_pathname, x->uuid_content);
-	else
-		return do_list_line(x->config_pathname);
-
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
-}
-
-void rand_temp_pathname(const char *old_pathname, char *pathname, size_t len)
-{
-
-	if (strlen(old_pathname) + 4 >= len)
-	{
-		fprintf(stderr, "%s pathname too long!\n", old_pathname);
-		exit(-1);
-	}
-
-	srand((int) time(0));
-	char buf[5];
-	sprintf(buf, "%d", rand() % 10000);
-	strcpy(pathname, old_pathname);
-	strcat(pathname, buf);
-	if (access(pathname, 0) == 0) // if temp file exist, generate another temp pathname
-		rand_temp_pathname(old_pathname, pathname, len);
-}
-
-int do_set(const struct kmc_option *x)
-{
-	char temp_pathname[200];
-	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
-
-	if (strlen(x->id_content) != 0 && strlen(x->uuid_content) != 0)
-		return do_update_uuid(x->config_pathname, temp_pathname, x->id_content,
-				x->uuid_content);
-
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
-}
-
-int do_remove(const struct kmc_option *x)
-{
-	char temp_pathname[200];
-	rand_temp_pathname(x->config_pathname, temp_pathname, 200);
-
-	if (strlen(x->id_content) != 0 && !x->uuid)
-		return do_remove_id(x->config_pathname, temp_pathname, x->id_content);
-
-	if (!x->id && strlen(x->uuid_content) != 0)
-		return do_remove_uuid(x->config_pathname, temp_pathname,
-				x->uuid_content);
-
-	fprintf(stderr, "invalid command, read more by help\n");
-	return -1;
-}
-
-/**
- * get method form pathname
- * such as:
- * 		pathname = /home/pc/workspace/rsa_key.conf
- * 		filename = rsa_key.conf
- * 		method = rsa
- *
- */
-int get_method_from_config_pathname(const char *pathname, char *method,
-		size_t len)
-{
-	int i = strlen(pathname) - 1;
-	int l_index = 0, r_index = -1;
-	while (i >= 0)
-	{
-		if (pathname[i] == '_')
-			r_index = i;
-		else if (pathname[i] == '/')
-		{
-			l_index = 1 + i;
-			break;
-		}
-		--i;
-	}
-
-	if (r_index <= 0 || r_index - l_index >= len)
-		return -1;
-
-	for (i = 0; l_index < r_index; i++, l_index++)
-		method[i] = pathname[l_index];
-	method[i] = '\0';
-
-	return 0;
-}
-
-int do_command(const struct kmc_option *x)
-{
-	char method[NAME_MAX];
-	if (get_method_from_config_pathname(x->config_pathname, method, NAME_MAX)
-			< 0)
-	{
-		fprintf(stderr, "%s configure filename error, get more by kmc --help.\n", x->config_pathname);
-		exit(1);
-	}
-	set_encryption_method(method, x->sk_pathname, x->pk_pathname);
-
-	switch (x->mode)
-	{
-	case LIST_CMD:
-		do_list(x);
-		break;
-	case SET_CMD:
-		do_set(x);
-		break;
-	case REMOVE_CMD:
-		do_remove(x);
-		break;
-	default:
-		show_command_error();
-		exit(1);
-	}
-
-	return 0;
 }
 
 int main(int argc, char ** argv)

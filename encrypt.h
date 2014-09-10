@@ -8,6 +8,7 @@
 #ifndef ENCRYPT_H_
 #define ENCRYPT_H_
 
+#include <limits.h>
 #include "rsa.h"
 
 struct encrypt_operations
@@ -21,8 +22,8 @@ struct encrypt_operations
 	int (*verify)(const char *text, const char *signature,
 			const char *pk_filename);
 
-	char sk_filename[200];
-	char pk_filename[200];
+	char sk_filename[PATH_MAX];
+	char pk_filename[PATH_MAX];
 };
 
 

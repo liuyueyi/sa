@@ -22,9 +22,9 @@ struct encrypt_operations * set_encryption_method(const char *method,
 		e->sign = rsa_sign;
 		e->verify = rsa_verify;
 
-		if (strlen(sk_filename) < sizeof(e->sk_filename))
+		if (strlen(sk_filename) < PATH_MAX)
 			strcpy(e->sk_filename, sk_filename);
-		if (strlen(pk_filename) < sizeof(e->pk_filename))
+		if (strlen(pk_filename) < PATH_MAX)
 			strcpy(e->pk_filename, pk_filename);
 	}
 

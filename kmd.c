@@ -1,6 +1,6 @@
 #include "server.h"
 #include <getopt.h>
-#define pid_pathname "kmd.pid"
+#define pid_pathname "/var/run/kmd.pid"
 
 struct option const long_options[] =
 {

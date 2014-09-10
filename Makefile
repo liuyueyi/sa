@@ -3,6 +3,8 @@ OBJS_KM = main.o config.o rsa.o encrypt.o
 OBJS_KMD = kmd.o server.o
 CC = gcc
 CFLAGS = -Wall -g
+# Where to install
+INSTDIR = /usr/local/bin
 
 all : $(PROGRAM)
 
@@ -19,3 +21,14 @@ kmd : $(OBJS_KMD)
 clean:
 	-rm $(OBJS_KM) $(OBJS_KMD) *~
 	-rm $(PROGRAM)
+
+
+.PHONY: install
+install: kmc
+	install -m 0755 kmc $(INSTDIR)/
+	install -m 0755 kmd $(INSTDIR)/
+	install -m 0755 kmd_init.sh $(INSTDIR)/kmd_init
+	
+.PHONY: uninstall
+uninstall:
+	-rm $(INSTDIR)/kmc $(INSTDIR)/kmd $(INSTDIR)/kmd_init

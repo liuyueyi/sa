@@ -3,29 +3,30 @@
 case "$1" in
 
     start)
-    if [ -x ./kmd ] ; then
+    if [ -x /usr/local/bin/kmd ] ; then
     echo "start..."
-    ./kmd $0 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11&
+    /usr/local/bin/kmd $0 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11&
     fi
     ;;
 
     stop)
     echo "kill... " 
-    kill -9 `cat kmd.pid`
-    rm kmd.pid
+    kill -9 `cat /var/run/kmd.pid`
+    rm /var/run/kmd.pid
     ;;
 
 	restart)
 	echo "restart...."
-	kill -9 `cat kmd.pid`
-	if [ -x ./kmd ] ; then
-    ./kmd $0 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11&
+	kill -9 `cat /var/run/kmd.pid`
+	rm /var/run/kmd.pid
+	if [ -x /usr/local/bin/kmd ] ; then
+    /usr/local/bin/kmd $0 $2 $3 $4 $5 $6 $7 $8 $9 $10 $11&
     fi
 	;;
 	
 	help)
-	if [ -x ./kmd ] ; then
-    ./kmd $0 -h
+	if [ -x /usr/local/bin/kmd ] ; then
+    /usr/local/bin/kmd $0 -h
     fi
     ;;
 	

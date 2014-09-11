@@ -39,7 +39,7 @@ struct kmc_option
 	char pk_pathname[PATH_MAX];
 	char config_pathname[PATH_MAX];
 	char uuid_content[70];
-	char id_content[10];
+	char id_content[70];
 };
 
 #define LIST_CMD 1

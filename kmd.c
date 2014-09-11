@@ -10,8 +10,8 @@ struct option const long_options[] =
 { "sk_pathname", required_argument, NULL, 'S' },
 { "pk_pathname", required_argument, NULL, 'P' },
 { "help", no_argument, NULL, 'h' },
+{ "debug", required_argument, NULL, 'd' },
 { NULL, 0, NULL, 0 } };
-
 
 #define CONFIG_FILENAME "rsa_key.conf"
 #define TEMP_FILENAME "rsa_key.conf.tm"
@@ -20,14 +20,14 @@ struct option const long_options[] =
 #define DEFAULT_PORT 10033
 void kmd_option_init(struct kmd_option *x)
 {
+	x->debug = false;
 	x->port = DEFAULT_PORT;
-	strcpy(x->ip, "");
+	strcpy(x->ip, "INADDR_ANY");
 	strcpy(x->sk_pathname, SK_FILENAME);
 	strcpy(x->pk_pathname, PK_FILENAME);
 	strcpy(x->config_pathname, CONFIG_FILENAME);
 	strcpy(x->temp_pathname, TEMP_FILENAME);
 }
-
 
 void do_help()
 {
@@ -35,8 +35,7 @@ void do_help()
 	fputs(("\
 key management storage agent.\n\
 \n\
-"),
-			stdout);
+"), stdout);
 	fputs(
 			("\
 Mandatory arguments to long options are mandatory for short options too.\n\
@@ -122,7 +121,7 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 			{
 				strcpy(x->config_pathname, optarg);
 				strcpy(x->temp_pathname, optarg);
-				strcat(x->temp_pathname, ".tm");	
+				strcat(x->temp_pathname, ".tm");
 			}
 			break;
 
@@ -142,6 +141,11 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 		case 'h':
 			do_help();
 			break;
+
+		case 'd':
+			x->debug = true;
+			break;
+
 		case '?':
 			break;
 
@@ -152,14 +156,13 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 	}
 }
 
-
 int main(int argc, char **argv)
 {
 	struct kmd_option *x = (struct kmd_option *) malloc(
-			sizeof(struct kmd_option));;
+			sizeof(struct kmd_option));
 	kmd_option_init(x);
 	decode_switch(argc, argv, x);
-	
+
 	FILE * pf = NULL;
 	if (NULL == (pf = fopen(pid_pathname, "w")))
 	{
@@ -167,7 +170,8 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if(daemon(1, 0) < 0)
+	int fd = init_server(x);
+	if (!x->debug && daemon(1, 0) < 0)
 	{
 		fprintf(stderr, "start service, error\n");
 		exit(1);
@@ -176,6 +180,6 @@ int main(int argc, char **argv)
 	// record the process pid
 	fprintf(pf, "%d", getpid());
 	fclose(pf);
-	init_server(x);
+	server_work(fd);
 	return 0;
 }

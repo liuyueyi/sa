@@ -19,9 +19,11 @@
 #include <unistd.h>
 #include <time.h>
 #include <limits.h>
+#include <stdbool.h>
 
 struct kmd_option
 {
+	bool debug;
 	uint16_t port;
 	char ip[16];
 	
@@ -32,6 +34,8 @@ struct kmd_option
 };
 
 
-void init_server();
+int init_server();
+
+void server_work(int fd);
 
 #endif /* SERVER_H_ */

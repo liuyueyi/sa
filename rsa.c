@@ -6,6 +6,7 @@
  */
 
 #include "rsa.h"
+#include <limits.h>
 
 char *base64(const char *input, size_t length, char *result, size_t size)
 {
@@ -21,10 +22,10 @@ char *base64(const char *input, size_t length, char *result, size_t size)
 	BIO_flush(b64);
 	BIO_get_mem_ptr(b64, &bptr);
 
-	if(bptr->length + 1 > size)
+	if (bptr->length + 1 > size)
 	{
 		BIO_free_all(b64);
-		return NULL;
+		return NULL ;
 	}
 	memcpy(result, bptr->data, bptr->length);
 	result[bptr->length] = 0;
@@ -38,8 +39,8 @@ char *debase64(char *input, size_t length, char *result, size_t size)
 {
 	BIO * b64 = NULL;
 	BIO * bmem = NULL;
-	if(length > size)
-		return NULL;
+	if (length > size)
+		return NULL ;
 	memset(result, 0, size);
 
 	b64 = BIO_new(BIO_f_base64());
@@ -52,7 +53,51 @@ char *debase64(char *input, size_t length, char *result, size_t size)
 	return result;
 }
 
-char *rsa_encrypt(const char *plain_text, char *result, size_t size, const char *pk_filename)
+char *sha1(const char *filename, char *result, size_t len)
+{
+	FILE *f = fopen(filename, "r");
+	if (NULL == f)
+	{
+		fprintf(stderr, "%s open failed!\n", filename);
+		return NULL ;
+	}
+
+	SHA_CTX c;
+	unsigned char *dest = (unsigned char *) malloc(
+			(SHA_DIGEST_LENGTH + 1) * sizeof(unsigned char));
+	if (!SHA1_Init(&c) || dest == NULL )
+	{
+		fprintf(stderr, "calcuate sha1 dest error\n");
+		free(dest);
+		return NULL ;
+	}
+	memset(dest, 0, SHA_DIGEST_LENGTH + 1);
+
+	char line[LINE_MAX];
+	while (fgets(line, LINE_MAX, f))
+	{
+		int index = strlen(line);
+		while (line[index - 1] == '\r' || line[index - 1] == '\n')
+			--index;
+		if (index < strlen(line))
+		{
+			line[index] = '\n';
+			line[index + 1] = 0;
+		}
+		SHA1_Update(&c, line, strlen(line));
+	}
+
+	SHA1_Final(dest, &c);
+	OPENSSL_cleanse(&c, sizeof(c));
+	fclose(f);
+
+	base64(dest, strlen(dest), result, len);
+	free(dest);
+	return result;
+}
+
+char *rsa_encrypt(const char *plain_text, char *result, size_t size,
+		const char *pk_filename)
 {
 	unsigned char *cipher;
 	int len;
@@ -80,8 +125,9 @@ char *rsa_encrypt(const char *plain_text, char *result, size_t size, const char 
 	memset(cipher, 0, len + 1);
 
 	if (0
-			> RSA_public_encrypt(strlen(plain_text), (unsigned char *) plain_text,
-					(unsigned char*) cipher, rsa, RSA_PKCS1_PADDING))
+			> RSA_public_encrypt(strlen(plain_text),
+					(unsigned char *) plain_text, (unsigned char*) cipher, rsa,
+					RSA_PKCS1_PADDING))
 	{
 		RSA_free(rsa);
 		free(cipher);
@@ -94,7 +140,8 @@ char *rsa_encrypt(const char *plain_text, char *result, size_t size, const char 
 	return result;
 }
 
-char *rsa_decrypt(const char *cipher, char *plain_text, size_t size, const char *sk_filename)
+char *rsa_decrypt(const char *cipher, char *plain_text, size_t size,
+		const char *sk_filename)
 {
 	FILE *file = NULL;
 	RSA *rsa;
@@ -116,11 +163,11 @@ char *rsa_decrypt(const char *cipher, char *plain_text, size_t size, const char 
 	memset(plain_text, 0, size);
 
 	char temp[250];
-	if(NULL == debase64(cipher, strlen(cipher), temp, 250))
+	if (NULL == debase64(cipher, strlen(cipher), temp, 250))
 	{
 		RSA_free(rsa);
 		fprintf(stderr, "decrypt error\n");
-		return NULL;
+		return NULL ;
 	}
 
 	if (0
@@ -135,7 +182,8 @@ char *rsa_decrypt(const char *cipher, char *plain_text, size_t size, const char 
 	return plain_text;
 }
 
-char *rsa_sign(const char *text, char *signature, size_t size, const char *sk_filename)
+char *rsa_sign(const char *text, char *signature, size_t size,
+		const char *sk_filename)
 {
 	RSA *rsa;
 	FILE *file;
@@ -194,14 +242,15 @@ int rsa_verify(const char *text, const char *sig, const char *pk_filename)
 	fclose(file);
 
 	char sig_temp[250];
-	if(NULL == debase64(sig, strlen((char *) sig), sig_temp, 250))
+	if (NULL == debase64(sig, strlen((char *) sig), sig_temp, 250))
 	{
 		return -1;
 	}
 
 	unsigned char temp[50];
 	SHA((const unsigned char *) text, strlen(text), temp);
-	int ret = RSA_verify(NID_sha1, temp, 16, (unsigned char *)sig_temp, 128, rsa);
+	int ret = RSA_verify(NID_sha1, temp, 16, (unsigned char *) sig_temp, 128,
+			rsa);
 	RSA_free(rsa);
 	return (ret == 1) ? 0 : -1;
 }

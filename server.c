@@ -116,7 +116,7 @@ void init_server(const struct kmd_option *x)
 {
 	int sockfd;
 	int clientfd;
-	uint16_t port = 10033;// x->port;
+	uint16_t port = x->port;
 	
 	struct sockaddr_in server_addr, client_addr;
 	bzero(&server_addr, sizeof(server_addr));

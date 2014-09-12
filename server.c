@@ -133,6 +133,7 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 
 	if (data_len < 0) // receive data error
 	{
+		record_log("receive data from ip:%s error\n", client_ip);
 		remove(x->temp_pathname);
 		return data_len;
 	}
@@ -208,7 +209,8 @@ static void signal_handler(int sig)
 	int stat;
 	pid_t pid;
 
-	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0);
+	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
+		;
 	busy = 0;
 }
 
@@ -239,7 +241,7 @@ void server_work(int sockfd, const struct kmd_option *x)
 		if (busy == 1)
 		{
 			print_dbg(1, "socket busy\n");
-			record_log("socket busy\n", NULL );
+			record_log("socket busy\n", NULL);
 			close(clientfd);
 			sleep(1);
 			continue;
@@ -250,7 +252,7 @@ void server_work(int sockfd, const struct kmd_option *x)
 		if (i < 0)
 		{
 			print_dbg(0, "create child process failed\n");
-			record_log("create child process failed\n", NULL );
+			record_log("create child process failed\n", NULL);
 			busy = 0;
 		}
 		else if (0 == i)

@@ -183,8 +183,6 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	printf("pid = %d\n", getpid());
-
 	if (!x->debug && daemon(1, 0) < 0)
 	{
 		fprintf(stderr, "start SA service error\n");

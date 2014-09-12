@@ -175,23 +175,6 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	return size;
 }
 
-#define SIGFREE 0
-#define SIGBUSY 1
-int busy = 0;
-static void signal_handler(int sig)
-{
-	switch (sig)
-	{
-	case SIGBUSY:
-		busy = 1;
-		break;
-	case SIGFREE:
-		busy = 0;
-		break;
-	}
-	return;
-}
-
 void server_process(int sockfd, const struct kmd_option *x)
 {
 	int data_len = 0;
@@ -215,12 +198,26 @@ void server_process(int sockfd, const struct kmd_option *x)
 		record_log("command \'%c\' is illegal\n", (void *) cmd);
 		break;
 	}
+
+	print_dbg(2, "response client request over\n");
+}
+
+int busy = 0;
+static void signal_handler(int sig)
+{
+	int stat;
+	pid_t pid;
+
+	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0);
+	busy = 0;
 }
 
 void server_work(int sockfd, const struct kmd_option *x)
 {
 	int clientfd;
 	struct sockaddr_in client_addr;
+
+	signal(SIGCHLD, signal_handler);
 	while (1)
 	{
 		socklen_t len = sizeof(client_addr);
@@ -248,21 +245,19 @@ void server_work(int sockfd, const struct kmd_option *x)
 			continue;
 		}
 
+		busy = 1;
 		int i = fork();
 		if (i < 0)
 		{
 			print_dbg(0, "create child process failed\n");
-			record_log("create child process failed\n", NULL);
-			signal_handler(SIGFREE);
+			record_log("create child process failed\n", NULL );
+			busy = 0;
 		}
 		else if (0 == i)
 		{
-			signal_handler(SIGBUSY);
 			server_process(clientfd, x);
-			signal_handler(SIGFREE);
 			exit(0);
 		}
-
 		close(clientfd);
 	}
 }
@@ -300,6 +295,7 @@ int init_server(const struct kmd_option *x)
 	}
 
 	print_dbg(0, "init server succeed\n");
-	print_dbg(1, "sa server ip=%s, port=%d\n", inet_ntoa(server_addr.sin_addr), port);
+	print_dbg(1,
+			"sa server ip=%s, port=%d\n", inet_ntoa(server_addr.sin_addr), port);
 	return sockfd;
 }

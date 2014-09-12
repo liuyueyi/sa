@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/file.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -22,6 +23,7 @@
 #include <stdbool.h>
 #include <syslog.h>
 #include <signal.h>
+
 
 struct kmd_option
 {

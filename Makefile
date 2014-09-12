@@ -27,7 +27,7 @@ clean:
 install: kmc
 	install -m 0755 kmc $(INSTDIR)/
 	install -m 0755 kmd $(INSTDIR)/
-	install -m 0755 kmd_init.sh $(INSTDIR)/kmd_init
+	install -m 0755 kmd.sh $(INSTDIR)/kmd.sh
 	
 .PHONY: uninstall
 uninstall:

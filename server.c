@@ -8,7 +8,7 @@
 #include "server.h"
 #include "rsa.h"
 
-int dbg_level = 0;
+int dbg_level = -1;
 #define print_dbg(level, ...)						\
 	({								\
 	if (level <= dbg_level) {					\

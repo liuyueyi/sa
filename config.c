@@ -109,7 +109,7 @@ int do_putline(const char *pathname, const char *temp_pathname,
 	{
 		// if file locked, then exit
 		fprintf(stderr, "%s used, try later\n", pathname);
-		exit(-1);
+		return -1;
 	}
 
 	while (fgets(line, LINE_MAX, f))
@@ -210,7 +210,7 @@ int print_key(const char *line, size_t len, const void *priv,
 			|| !((*(en->decrypt))(key, result, 200, en->sk_filename)))
 	{
 		fprintf(stderr, "fail to decrypt the volume key\n");
-		exit(-1);
+		return -1;
 	}
 
 	/*
@@ -285,7 +285,7 @@ int add_uuid(const char *line, char *result, size_t len, const char *id,
 	{
 		fprintf(stderr,
 				"%s number overflow, please selected another volume key\n", id);
-		exit(-1);
+		return -1;
 	}
 
 	while (line[line_len - 1] == '\r' || line[line_len - 1] == '\n')

@@ -136,7 +136,7 @@ int do_list(const struct kmc_option *x)
 			return do_list_key(x->config_pathname, x->uuid_content, en);
 
 		fprintf(stderr, "invalid command, please input correct id or uuid\n");
-		exit(-1);
+		return -1;
 	}
 
 	if (strlen(x->id_content) != 0)
@@ -148,7 +148,7 @@ int do_list(const struct kmc_option *x)
 
 		fprintf(stderr,
 				"invalid command, choose one option in {-i=xxx, -u=xxx}\n");
-		exit(-1);
+		return -1;
 	}
 	else if (strlen(x->uuid_content) != 0)
 		return do_list_id(x->config_pathname, x->uuid_content);
@@ -181,7 +181,7 @@ int do_set(const struct kmc_option *x)
 	if (x->plain_key)
 	{
 		fprintf(stderr, "-s -k can't be used together\n");
-		exit(-1);
+		return -1;
 	}
 
 	// only if id and uuid exist and not empty, then set
@@ -190,7 +190,7 @@ int do_set(const struct kmc_option *x)
 				x->uuid_content);
 
 	fprintf(stderr, "invalid command, both option -i=xxx -u=xxx are needed\n");
-	exit(-1);
+	return -1;
 }
 
 int do_remove(const struct kmc_option *x)
@@ -200,7 +200,7 @@ int do_remove(const struct kmc_option *x)
 	if (x->plain_key)
 	{
 		fprintf(stderr, "-s -k can't be used together\n");
-		exit(-1);
+		return -1;
 	}
 
 	// remove volume key
@@ -213,7 +213,7 @@ int do_remove(const struct kmc_option *x)
 				x->uuid_content);
 
 	fprintf(stderr, "invalid command, choose one option in {-i=xxx, -u=xxx}\n");
-	exit(-1);
+	return -1;
 }
 
 int do_command(const struct kmc_option *x)
@@ -232,19 +232,15 @@ int do_command(const struct kmc_option *x)
 	switch (x->mode)
 	{
 	case LIST_CMD:
-		do_list(x);
-		break;
+		return do_list(x);
 	case SET_CMD:
-		do_set(x);
-		break;
+		return do_set(x);
 	case REMOVE_CMD:
-		do_remove(x);
-		break;
+		return do_remove(x);
 	default:
 		show_command_error();
 		exit(1);
 	}
-
 	return 0;
 }
 

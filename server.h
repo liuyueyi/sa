@@ -20,11 +20,14 @@
 #include <time.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <syslog.h>
+#include <signal.h>
 
 struct kmd_option
 {
-	bool debug;
 	uint16_t port;
+	bool debug;
+	int debug_level;
 	char ip[16];
 	
 	char sk_pathname[PATH_MAX];
@@ -36,6 +39,6 @@ struct kmd_option
 
 int init_server();
 
-void server_work(int fd);
+void server_work(int fd, const struct kmd_option *x);
 
 #endif /* SERVER_H_ */

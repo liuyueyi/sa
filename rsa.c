@@ -63,16 +63,13 @@ char *sha1(const char *filename, char *result, size_t len)
 	}
 
 	SHA_CTX c;
-	unsigned char *dest = (unsigned char *) malloc(
-			(SHA_DIGEST_LENGTH + 1) * sizeof(unsigned char));
+	unsigned char dest[SHA_DIGEST_LENGTH + 1];
 	if (!SHA1_Init(&c) || dest == NULL )
 	{
 		fprintf(stderr, "calcuate sha1 dest error\n");
-		free(dest);
 		return NULL ;
 	}
 	memset(dest, 0, SHA_DIGEST_LENGTH + 1);
-
 	char line[LINE_MAX];
 	while (fgets(line, LINE_MAX, f))
 	{
@@ -92,7 +89,6 @@ char *sha1(const char *filename, char *result, size_t len)
 	fclose(f);
 
 	base64(dest, strlen(dest), result, len);
-	free(dest);
 	return result;
 }
 

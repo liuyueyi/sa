@@ -1,6 +1,6 @@
 #include "server.h"
 #include <getopt.h>
-#define pid_pathname "/var/run/kmd.pid"
+#define pid_pathname "kmd.pid"
 
 struct option const long_options[] =
 {
@@ -18,6 +18,8 @@ struct option const long_options[] =
 #define SK_FILENAME "rsa_priv.key"
 #define PK_FILENAME "rsa_pub.key"
 #define DEFAULT_PORT 10033
+
+extern int dbg_level;
 void kmd_option_init(struct kmd_option *x)
 {
 	x->debug = false;
@@ -144,6 +146,9 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 
 		case 'd':
 			x->debug = true;
+			if (*optarg == '=')
+				++optarg;
+			dbg_level = atoi(optarg);
 			break;
 
 		case '?':
@@ -163,23 +168,34 @@ int main(int argc, char **argv)
 	kmd_option_init(x);
 	decode_switch(argc, argv, x);
 
+	int sockfd = init_server(x);
+	if (sockfd < 0)
+	{
+		free(x);
+		return sockfd;
+	}
+
 	FILE * pf = NULL;
 	if (NULL == (pf = fopen(pid_pathname, "w")))
 	{
 		fprintf(stderr, "create %s file error\n", pid_pathname);
-		exit(1);
+		free(x);
+		return -1;
 	}
 
-	int fd = init_server(x);
 	if (!x->debug && daemon(1, 0) < 0)
 	{
-		fprintf(stderr, "start service, error\n");
-		exit(1);
+		fprintf(stderr, "start SA service error\n");
+		fclose(pf);
+		free(x);
+		return -1;
 	}
 
 	// record the process pid
 	fprintf(pf, "%d", getpid());
 	fclose(pf);
-	server_work(fd);
+	server_work(sockfd, x);
+
+	free(x);
 	return 0;
 }

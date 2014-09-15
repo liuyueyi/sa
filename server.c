@@ -138,13 +138,20 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 		return data_len;
 	}
 
-//	char result[29];
-//	sha1(x->config_pathname, result, 29);
-//	if (strcmp(digest, result) != 0)
-//	{
-//		record_log(0, "receive data integrity verify failed\n", NULL);
-//		return -1;
-//	}
+	char result[29];
+	if(NULL == sha1(x->config_pathname, result, 29))
+	{
+		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
+		return record_log("failed to calculate receive data's sha1 digest\n", NULL);
+	}
+
+	if (strcmp(digest, result) != 0)
+	{
+		print_dbg("receive data's integrity verify failed\n");
+		record_log("receive data's integrity verify failed\n", NULL);
+		return -1;
+	}
+
 	return rename_tempfile(x);
 }
 
@@ -153,6 +160,21 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	FILE *f;
 	int size;
 	char buffer[LINE_MAX];
+	char result[29];
+
+	// calculate and send sha1 digest for integrity verify
+	if (NULL == sha1(x->config_pathname, result, 29))
+	{
+		print_dbg(0, "calculate sha1 digest error\n");
+		return record_log("calculate sha1 digest error\n", NULL );
+	}
+	if (sendn(sockfd, result, 28, 0) < 0)
+	{
+		print_dbg(0, "send sha1 digest error\n");
+		return record_log("send sha1 digest error\n", NULL );
+	}
+
+
 	if ((f = fopen(x->config_pathname, "r")) == NULL )
 	{
 		print_dbg(0, "%s volume key file not exist!\n", x->config_pathname);
@@ -160,11 +182,6 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	}
 
 	flock(fileno(f), LOCK_SH); // if file locked, then waited until it was unlocked
-
-//	char result[29];
-//	sha1(x->config_pathname, result, 29); // 错误判断
-//	send(sockfd, result, 28, 0); // send digest
-
 	while (fgets(buffer, LINE_MAX, f))
 	{
 		if ((size = sendn(sockfd, buffer, strlen(buffer), 0)) < 0)
@@ -241,7 +258,7 @@ void server_work(int sockfd, const struct kmd_option *x)
 		if (busy == 1)
 		{
 			print_dbg(1, "socket busy\n");
-			record_log("socket busy\n", NULL);
+			record_log("socket busy\n", NULL );
 			close(clientfd);
 			sleep(1);
 			continue;
@@ -252,7 +269,7 @@ void server_work(int sockfd, const struct kmd_option *x)
 		if (i < 0)
 		{
 			print_dbg(0, "create child process failed\n");
-			record_log("create child process failed\n", NULL);
+			record_log("create child process failed\n", NULL );
 			busy = 0;
 		}
 		else if (0 == i)

@@ -66,7 +66,7 @@ char *sha1(const char *filename, char *result, size_t len)
 	unsigned char dest[SHA_DIGEST_LENGTH + 1];
 	if (!SHA1_Init(&c) || dest == NULL )
 	{
-		fprintf(stderr, "calcuate sha1 dest error\n");
+		fprintf(stderr, "calculate sha1 digest error\n");
 		return NULL ;
 	}
 	memset(dest, 0, SHA_DIGEST_LENGTH + 1);
@@ -77,10 +77,8 @@ char *sha1(const char *filename, char *result, size_t len)
 		while (line[index - 1] == '\r' || line[index - 1] == '\n')
 			--index;
 		if (index < strlen(line))
-		{
-			line[index] = '\n';
-			line[index + 1] = 0;
-		}
+			line[index] = 0;
+
 		SHA1_Update(&c, line, strlen(line));
 	}
 

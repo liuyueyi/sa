@@ -61,26 +61,52 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 	return size;
 }
 
-bool verify_client(int sockfd)
+bool verify_client(int sockfd, struct kmd_option *x)
 {
 	char buffer[20];
 	int len = 0;
-	memset(buffer, 0, sizeof(buffer));
+
+	if((len = recvn(sockfd, buffer, 20, 0)) < 0)
+	{
+		print_dbg(0, "receive connect protocol error\n");
+		return false;
+	}
+	struct encrypt_operations *en = set_encryption_method(buffer,
+				x->sk_pathname, x->pk_pathname);
 
 	srand((int) time(0));
 	int n = rand() % 1000;
-	sprintf(buffer, "%d", n); // generate a rand num
+	sprintf(buffer, "%d", n); // generate a random number
 
-	if (send(sockfd, buffer, strlen(buffer), 0) != strlen(buffer))
+	char cipher[200];
+	if(NULL == en->encrypt(buffer, cipher, 200, x->sk_pathname))
+	{
+		print_dbg(0, "encrypt random number error\n");
 		return false;
+	}
+	if (sendn(sockfd, cipher, strlen(cipher), 0) != strlen(cipher))
+	{
+		print_dbg(0, "send random number error\n");
+		return false;
+	}
 
-	if ((len = recv(sockfd, buffer, 20, 0)) < 0)
+	char receive[20];
+	if ((len = recvn(sockfd, receive, 20, 0)) < 0)
+	{
+		print_dbg(0, "receive random number error\n");
 		return false;
-	int m = atoi(buffer);
+	}
+	int m = atoi(receive);
 	if (m == n)
+	{
+		print_dbg(1, "verify client legal\n");
 		return true;
+	}
 	else
+	{
+		print_dbg(1, "verify client illegal\n");
 		return false;
+	}
 }
 
 int rename_tempfile(const struct kmd_option *x)
@@ -147,7 +173,7 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 
 	if (strcmp(digest, result) != 0)
 	{
-		print_dbg("receive data's integrity verify failed\n");
+		print_dbg(0, "receive data's integrity verify failed\n");
 		record_log("receive data's integrity verify failed\n", NULL);
 		return -1;
 	}
@@ -254,6 +280,10 @@ void server_work(int sockfd, const struct kmd_option *x)
 			}
 		}
 		strcpy(client_ip, inet_ntoa(client_addr.sin_addr));
+
+		/*
+		 * verify the client
+		 */
 
 		if (busy == 1)
 		{

@@ -9,7 +9,7 @@
 
 #define UUID_MAX_NUM  10
 #define string_space " \n\t\f\r\v"
-const char *get_column(char *line, int col)
+char *get_column(char *line, int col)
 {
 	char *ptr = NULL;
 	ptr = strtok(line, string_space);
@@ -23,7 +23,8 @@ const char *get_column(char *line, int col)
 
 /**
  * judge if the priv is the valid column of line
- */bool is_valid_column(const char *line, size_t len, const char *priv)
+ */
+bool is_valid_column(const char *line, size_t len, const char *priv)
 {
 	char *ptr = NULL;
 	ptr = strstr(line, priv);

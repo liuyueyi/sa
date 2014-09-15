@@ -18,7 +18,7 @@
 #include <limits.h>
 #include "encrypt.h"
 
-const char *get_column(char *line, int col);
+char *get_column(char *line, int col);
 
 bool is_valid_column(const char *line, size_t len, const char *priv);
 

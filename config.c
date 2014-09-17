@@ -23,8 +23,7 @@ char *get_column(char *line, int col)
 
 /**
  * judge if the priv is the valid column of line
- */
-bool is_valid_column(const char *line, size_t len, const char *priv)
+ */bool is_valid_column(const char *line, size_t len, const char *priv)
 {
 	char *ptr = NULL;
 	ptr = strstr(line, priv);
@@ -217,14 +216,14 @@ int print_key(const char *line, size_t len, const void *priv,
 	/*
 	 * if vk is binary format and based before being encrypted
 	 * 		you should debase it first, and print the hexadecimal format
-	 char volume_key[20];
-	 debase64(result, strlen(result), volume_key, 20);
-	 int i = 0;
-	 while(i < strlen(volume_key))
-	 printf("%02x", (unsigned char)volume_key[i++]);
 	 */
+	char volume_key[50];
+	debase64(result, strlen(result), volume_key, 50);
+	int i = 0;
+	while (i < strlen(volume_key))
+		printf("%02x", (unsigned char) volume_key[i++]);
 
-	printf("%s\n", result);
+	// printf("%s\n", result);
 	return 1;
 }
 

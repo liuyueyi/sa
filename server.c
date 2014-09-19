@@ -61,25 +61,35 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 	return size;
 }
 
-bool verify_client(int sockfd, struct kmd_option *x)
+
+#ifndef EN
+#define EN
+struct encrypt_operations *en;
+#endif
+bool verify_client(int sockfd, const struct kmd_option *x)
 {
 	char buffer[20];
 	int len = 0;
 
-	if((len = recvn(sockfd, buffer, 20, 0)) < 0)
+	if ((len = recvn(sockfd, buffer, 20, 0)) < 0)
 	{
 		print_dbg(0, "receive connect protocol error\n");
 		return false;
 	}
-	struct encrypt_operations *en = set_encryption_method(buffer,
-				x->sk_pathname, x->pk_pathname);
+	en = set_encryption_method(buffer, x->sk_pathname, x->pk_pathname);
+	if (en == NULL )
+	{
+		print_dbg(0, "encrypt method(%s) error\n", buffer);
+		record_log("encrypt method(%s) error\n", buffer);
+		return false;
+	}
 
 	srand((int) time(0));
 	int n = rand() % 1000;
 	sprintf(buffer, "%d", n); // generate a random number
 
 	char cipher[200];
-	if(NULL == en->encrypt(buffer, cipher, 200, x->sk_pathname))
+	if (NULL ==(*(en->encrypt))(buffer, cipher, 200, x->sk_pathname))
 	{
 		print_dbg(0, "encrypt random number error\n");
 		return false;
@@ -165,16 +175,17 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 	}
 
 	char result[29];
-	if(NULL == sha1(x->config_pathname, result, 29))
+	if (NULL == (*(en->sha1))(x->config_pathname, result, 29))
 	{
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
-		return record_log("failed to calculate receive data's sha1 digest\n", NULL);
+		return record_log("failed to calculate receive data's sha1 digest\n",
+				NULL );
 	}
 
 	if (strcmp(digest, result) != 0)
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
-		record_log("receive data's integrity verify failed\n", NULL);
+		record_log("receive data's integrity verify failed\n", NULL );
 		return -1;
 	}
 
@@ -189,7 +200,7 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	char result[29];
 
 	// calculate and send sha1 digest for integrity verify
-	if (NULL == sha1(x->config_pathname, result, 29))
+	if (NULL == (*(en->sha1))(x->config_pathname, result, 29))
 	{
 		print_dbg(0, "calculate sha1 digest error\n");
 		return record_log("calculate sha1 digest error\n", NULL );
@@ -199,7 +210,6 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 		print_dbg(0, "send sha1 digest error\n");
 		return record_log("send sha1 digest error\n", NULL );
 	}
-
 
 	if ((f = fopen(x->config_pathname, "r")) == NULL )
 	{
@@ -244,6 +254,8 @@ void server_process(int sockfd, const struct kmd_option *x)
 	}
 
 	print_dbg(2, "response client request over\n");
+	free(en);
+	en = NULL;
 }
 
 int busy = 0;
@@ -279,11 +291,8 @@ void server_work(int sockfd, const struct kmd_option *x)
 						inet_ntoa(client_addr.sin_addr));
 			}
 		}
+		// record the client ip
 		strcpy(client_ip, inet_ntoa(client_addr.sin_addr));
-
-		/*
-		 * verify the client
-		 */
 
 		if (busy == 1)
 		{
@@ -291,6 +300,18 @@ void server_work(int sockfd, const struct kmd_option *x)
 			record_log("socket busy\n", NULL );
 			close(clientfd);
 			sleep(1);
+			continue;
+		}
+
+		/*
+		 * verify the client
+		 */
+		if (!verify_client(clientfd, x))
+		{
+			print_dbg(1,
+					"illegal ip:%s try to connect the server, and reject\n", client_ip);
+			record_log("illegal ip:%s try to connect the server, and reject\n",
+					client_ip);
 			continue;
 		}
 

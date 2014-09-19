@@ -12,7 +12,7 @@ kmc : $(OBJS_KM)
 	$(CC) ${CFLAGS} -o kmc $(OBJS_KM) -lcrypto 
 
 kmd : $(OBJS_KMD)
-	$(CC) ${CFLAGS} -o kmd $(OBJS_KMD) rsa.o -lcrypto
+	$(CC) ${CFLAGS} -o kmd $(OBJS_KMD) rsa.o encrypt.o -lcrypto
 
 .c.o:
 	$(CC) $(CFLAGS) -c $^ -o $@

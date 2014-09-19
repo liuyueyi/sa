@@ -24,6 +24,7 @@
 #include <syslog.h>
 #include <signal.h>
 
+#include "encrypt.h"
 
 struct kmd_option
 {

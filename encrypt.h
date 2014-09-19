@@ -22,6 +22,8 @@ struct encrypt_operations
 	int (*verify)(const char *text, const char *signature,
 			const char *pk_filename);
 
+	char *(*sha1)(const char *filename, char *result, size_t len);
+
 	char sk_filename[PATH_MAX];
 	char pk_filename[PATH_MAX];
 };

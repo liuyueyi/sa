@@ -8,6 +8,10 @@ This project used RSA and BASE64 function for Asymmetric encryption, so in order
  If you want to just get on with it, do:
 
   $ make
+  $ sudo make install
+  
+ If you want to uninstall this product, do:
+  $ sudo make uninstall
 
 
 OPENSSL DESCRYPTION
@@ -52,9 +56,11 @@ CONFIG FILE FORMAT
 Config file name should be started with encryption method such as "rsa_xxx" or "sm_xxx", the file name tell you which encrypt method to use!
 Config file saved all the id, key and uuid information. Each line contained valied id, key and uuid. One id can match many uuid, however one uuid can only match one id. The line start with '#' is Comment lines, you can ignore it.
 
-	-id: the volume key's unique id
-	-key: the cipher of Symmetric key	
-	-uuid: the volume's unique id
+	--id: the volume key's unique id
+	--key: the cipher of Symmetric key	
+	--uuid: the volume's unique id
+	--sk_pathname: private key pathname
+	--pk_pathname: public key pathname
 	
 
 SERVER COMMAND
@@ -62,9 +68,30 @@ SERVER COMMAND
   you can either use init.sh to start/stop/restart the server, or directly input ./kmd under terminal to start the server.The kmd.pid file saved the process pid of the server, so if you want to kill the server process, except use init.sh script, you can also directly input(kill -9 `cat kmd.pid`) to kill the server
   
   for example:
-    start server:  ./init.sh start
-    kill server: ./init.sh kill
-    restart server: ./init.sh restart
+    start server:  
+    	sudo kmd.sh start
+    kill server:  
+    	sudo kmd.sh kill
+    restart server: 
+    	sudo kmd.sh restart
+	get help:
+		sudo kmd.sh help
+  
+  If you want to print the debug infomation, do:
+        sudo kmd -d=[0..2]
 
-	you can get more by input ./init.sh help
+        
+SERCER PROCESS FLOW
+-------------------
+  --to connect the server, the client should first send the encrypted method(such as:rsa, sm),then the server will generate a random number which is less than 1000, and encrypt the number by the select encrypted method.
+  --server return the cipher to the client, then client should decrypt the cipher by it's private key, after this client return the nunmber to server
+  --server verify the receive number, and compare the two number
+  --if not equal
+  		then return 'N', then close the socket
+    else 
+    	start to transport data
 
+  Server command:
+    --'A': receive the data from kmc, and save it append to the original key file
+    --'R': receive the data form kmc, and replace the the original key with the received data
+    --'T': send the key file's data to kmc  	

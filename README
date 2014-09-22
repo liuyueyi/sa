@@ -86,12 +86,14 @@ SERCER PROCESS FLOW
   --to connect the server, the client should first send the encrypted method(such as:rsa, sm),then the server will generate a random number which is less than 1000, and encrypt the number by the select encrypted method.
   --server return the cipher to the client, then client should decrypt the cipher by it's private key, after this client return the nunmber to server
   --server verify the receive number, and compare the two number
-  --if not equal
+  --not equal
   		then return 'N', then close the socket
-    else 
+  -- equal
     	start to transport data
 
-  Server command:
-    --'A': receive the data from kmc, and save it append to the original key file
-    --'R': receive the data form kmc, and replace the the original key with the received data
-    --'T': send the key file's data to kmc  	
+Server command:
+  --'A': receive the data from kmc, and save it append to the original key file
+  --'R': receive the data form kmc, and replace the the original key with the received data
+  --'T': send the key file's data to kmc
+ 
+ attention: when receive data from kmc or send data to kmc, in order to ensure the data is corrected and integrity, the produce calculate the sha1 digest. So client should send sha1 digest before data and should verify the receive data's sha1 digest 	

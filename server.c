@@ -322,7 +322,7 @@ void server_process(int sockfd, struct kmd_option *x)
 	print_dbg(1, "command from ip=%s is \'%c\'\n", client_ip, cmd);
 	switch (cmd)
 	{
-	case 'A':
+	case 'A': // append to original file
 		receive_volume_key(sockfd, x, append_tempfile);
 		break;
 	case 'R': // receive file

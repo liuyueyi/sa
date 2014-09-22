@@ -152,7 +152,7 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 			break;
 
 		case '?':
-			break;
+			exit(-1);
 
 		default:
 			printf("?? getopt returned character code 0%o ??\n", c);

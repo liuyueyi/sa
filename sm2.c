@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <limits.h>
-
-#include "eccapi.h"
+#include "sm2.h"
 
 int sm2(char *buf1, char *buf2, size_t len, const char *pathname,
 		int (*crypt)(void *handle, char *buf1, char *buf2, size_t len,
@@ -136,17 +129,20 @@ int do_hash(void *session, char *pathname, char *buf2, size_t len,
 	return ret;
 }
 
-int encrypt(char *plain_text, char *cipher, size_t len, const char *sk_pathname)
+int sm2_encrypt(char *plain_text, char *cipher, size_t len,
+		const char *sk_pathname)
 {
 	return sm2(plain_text, cipher, len, sk_pathname, do_encrypt);
 }
 
-int decrypt(char *cipher, char *recover, size_t len, const char *pk_pathname)
+int sm2_decrypt(char *cipher, char *recover, size_t len,
+		const char *pk_pathname)
 {
 	return sm2(cipher, recover, len, pk_pathname, do_decrypt);
 }
 
-int sm_sha1(const char *pathname, char *result, size_t len, const char *pk_pathname)
+int sm2_sha1(const char *pathname, char *result, size_t len,
+		const char *pk_pathname)
 {
 	return sm2(pathname, result, len, pk_pathname, do_hash);
 }

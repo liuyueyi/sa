@@ -58,6 +58,9 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 			return -errno;
 		}
 	}
+	else if(size < len)
+		return size + sendn(fd, buf + size, len - size, flag);
+
 	return size;
 }
 
@@ -128,9 +131,10 @@ bool verify_client(int sockfd, struct kmd_option *x)
 		print_dbg(0, "encrypt random number error\n");
 		return false;
 	}
-	cipher[strlen(cipher)] = '\n';
-	cipher[strlen(cipher) + 1] = '\0';
-	if (sendn(sockfd, cipher, strlen(cipher), 0) != strlen(cipher))
+	size_t c_len = strlen(cipher);
+	cipher[c_len] = '\n';
+	cipher[c_len + 1] = '\0';
+	if (sendn(sockfd, cipher, c_len, 0) != c_len)
 	{
 		print_dbg(0, "send random number error\n");
 		return false;
@@ -191,6 +195,28 @@ int rename_tempfile(const struct kmd_option *x)
 	return 0;
 }
 
+/**
+ * judge if line is in the file
+ */
+bool in_file(FILE *f, char *line)
+{
+	bool tag = false;
+	if(-1 == fseek(f, 0, SEEK_SET))
+		in_file(f, line);
+
+	char buf[LINE_MAX];
+	while(fgets(buf, LINE_MAX, f))
+	{
+		if(strcmp(buf, line) == 0)
+		{
+			tag = true;
+			break;
+		}
+		tag = false;
+	}
+	return tag;
+}
+
 int append_tempfile(const struct kmd_option *x)
 {
 	FILE *cf;
@@ -207,7 +233,11 @@ int append_tempfile(const struct kmd_option *x)
 	flock(fileno(cf), LOCK_EX);
 	char line[LINE_MAX];
 	while (fgets(line, LINE_MAX, tf))
-		fputs(line, cf);
+	{
+		// if exist, then ignore this volume key
+		if(!in_file(cf, line))
+			fputs(line, cf);
+	}
 
 	flock(fileno(cf), LOCK_UN);
 	fclose(cf);

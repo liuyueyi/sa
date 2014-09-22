@@ -122,8 +122,8 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	sprintf(buffer, "%d", n); // generate a random 
 	print_dbg(1, "the randmom is %d\n", n);
 
-	char cipher[500];
-	if (NULL == (*(en->encrypt))(buffer, cipher, 500, x->pk_pathname))
+	char cipher[1024];
+	if (NULL == (*(en->encrypt))(buffer, cipher, 1024, x->pk_pathname))
 	{
 		print_dbg(0, "encrypt random number error\n");
 		return false;

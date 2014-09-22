@@ -13,13 +13,10 @@
 #include <arpa/inet.h>
 #include <sys/file.h>
 #include <sys/wait.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <time.h>
-#include <limits.h>
 #include <stdbool.h>
 #include <syslog.h>
 #include <signal.h>
@@ -32,16 +29,15 @@ struct kmd_option
 	bool debug;
 	int debug_level;
 	char ip[16];
-	
+
 	char sk_pathname[PATH_MAX];
 	char pk_pathname[PATH_MAX];
 	char config_pathname[PATH_MAX];
 	char temp_pathname[PATH_MAX];
 };
 
-
 int init_server();
 
-void server_work(int fd, const struct kmd_option *x);
+void server_work(int fd, struct kmd_option *x);
 
 #endif /* SERVER_H_ */

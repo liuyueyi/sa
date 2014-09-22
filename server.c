@@ -61,12 +61,50 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 	return size;
 }
 
+/**
+ * remove the begin and end space of the buf, and inter buf there is no space character
+ * for example: 
+ *  buf="  rsa \n\t ", then you will get buf="rsa"
+ *  buf=" rsa sm \n"    this buf type is illegal
+ */
+void remove_space(char *buf, size_t len)
+{
+	int i = 0, j = 0;
+	bool tag = false;
+	while (i < len)
+	{
+		if (!isspace(buf[i])) // not space
+		{
+			tag = true;
+			buf[j++] = buf[i++];
+			continue;
+		}
+
+		if (tag)
+			break;
+		++i;
+	}
+	buf[j] = '\0';
+}
 
 #ifndef EN
 #define EN
 struct encrypt_operations *en;
 #endif
-bool verify_client(int sockfd, const struct kmd_option *x)
+bool init_encrypt_method(char *buffer, struct kmd_option *x)
+{
+	remove_space(buffer, 20);
+	en = set_encryption_method(buffer, x->sk_pathname, x->pk_pathname);
+	if (en == NULL )
+	{
+		print_dbg(0, "encrypt method(%s) error\n", buffer);
+		record_log("encrypt method(%s) error\n", buffer);
+		return false;
+	}
+	return true;
+}
+
+bool verify_client(int sockfd, struct kmd_option *x)
 {
 	char buffer[20];
 	int len = 0;
@@ -76,20 +114,16 @@ bool verify_client(int sockfd, const struct kmd_option *x)
 		print_dbg(0, "receive connect protocol error\n");
 		return false;
 	}
-	en = set_encryption_method(buffer, x->sk_pathname, x->pk_pathname);
-	if (en == NULL )
-	{
-		print_dbg(0, "encrypt method(%s) error\n", buffer);
-		record_log("encrypt method(%s) error\n", buffer);
+	if (!init_encrypt_method(buffer, x))
 		return false;
-	}
 
 	srand((int) time(0));
 	int n = rand() % 1000;
-	sprintf(buffer, "%d", n); // generate a random number
+	sprintf(buffer, "%d", n); // generate a random 
+	print_dbg(1, "the randmom is %d\n", n);
 
 	char cipher[200];
-	if (NULL ==(*(en->encrypt))(buffer, cipher, 200, x->sk_pathname))
+	if (NULL == (*(en->encrypt))(buffer, cipher, 200, x->pk_pathname))
 	{
 		print_dbg(0, "encrypt random number error\n");
 		return false;
@@ -107,6 +141,8 @@ bool verify_client(int sockfd, const struct kmd_option *x)
 		return false;
 	}
 	int m = atoi(receive);
+
+	print_dbg(1, "(random %d) (receive %d)\n", n, m);
 	if (m == n)
 	{
 		print_dbg(1, "verify client legal\n");
@@ -148,6 +184,7 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 	char buffer[LINE_MAX];
 	int data_len;
 	char digest[29];
+	// receive the data sha1 digest
 	if ((data_len = recvn(sockfd, digest, 28, 0)) < 0)
 	{
 		record_log("receive data digest error\n", NULL );
@@ -175,7 +212,7 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 	}
 
 	char result[29];
-	if (NULL == (*(en->sha1))(x->config_pathname, result, 29))
+	if (NULL == (*(en->sha1))(x->config_pathname, result, 29, x->pk_pathname))
 	{
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
 		return record_log("failed to calculate receive data's sha1 digest\n",
@@ -200,11 +237,13 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	char result[29];
 
 	// calculate and send sha1 digest for integrity verify
-	if (NULL == (*(en->sha1))(x->config_pathname, result, 29))
+	if (NULL == (*(en->sha1))(x->config_pathname, result, 29, x->pk_pathname))
 	{
 		print_dbg(0, "calculate sha1 digest error\n");
 		return record_log("calculate sha1 digest error\n", NULL );
 	}
+	print_dbg(1, "the sha1 digest is : %s\n", result);
+
 	if (sendn(sockfd, result, 28, 0) < 0)
 	{
 		print_dbg(0, "send sha1 digest error\n");
@@ -229,7 +268,7 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	return size;
 }
 
-void server_process(int sockfd, const struct kmd_option *x)
+void server_process(int sockfd, struct kmd_option *x)
 {
 	int data_len = 0;
 	char cmd;
@@ -269,7 +308,7 @@ static void signal_handler(int sig)
 	busy = 0;
 }
 
-void server_work(int sockfd, const struct kmd_option *x)
+void server_work(int sockfd, struct kmd_option *x)
 {
 	int clientfd;
 	struct sockaddr_in client_addr;
@@ -303,18 +342,6 @@ void server_work(int sockfd, const struct kmd_option *x)
 			continue;
 		}
 
-		/*
-		 * verify the client
-		 */
-		if (!verify_client(clientfd, x))
-		{
-			print_dbg(1,
-					"illegal ip:%s try to connect the server, and reject\n", client_ip);
-			record_log("illegal ip:%s try to connect the server, and reject\n",
-					client_ip);
-			continue;
-		}
-
 		busy = 1;
 		int i = fork();
 		if (i < 0)
@@ -325,6 +352,16 @@ void server_work(int sockfd, const struct kmd_option *x)
 		}
 		else if (0 == i)
 		{
+			if (!verify_client(clientfd, x))
+			{
+				print_dbg(1,
+						"illegal ip:%s try to connect the server, and reject\n", client_ip);
+				record_log(
+						"illegal ip:%s try to connect the server, and reject\n",
+						client_ip);
+				exit(0);
+			}
+
 			server_process(clientfd, x);
 			exit(0);
 		}

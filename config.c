@@ -224,7 +224,7 @@ int print_key(const char *line, size_t len, const void *priv,
 		printf("%02x", (unsigned char) volume_key[i++]);
 	printf("\n");
 
-	// printf("%s\n", result);
+	printf("%s\n", result);
 	return 1;
 }
 

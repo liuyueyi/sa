@@ -87,8 +87,8 @@ int do_decrypt(void *session, char *cipher, char *result, size_t len,
 	return ret;
 }
 
-int do_hash(void *session, char *buf1, char *buf2, size_t len,
-		const char *pathname)
+int do_hash(void *session, char *pathname, char *buf2, size_t len,
+		const char *pk_pathname)
 {
 	FILE *f = fopen(pathname, "r");
 	if (NULL == f)
@@ -146,7 +146,7 @@ int decrypt(char *cipher, char *recover, size_t len, const char *pk_pathname)
 	return sm2(cipher, recover, len, pk_pathname, do_decrypt);
 }
 
-int sm_sha1(const char *pathname, char *result, size_t len)
+int sm_sha1(const char *pathname, char *result, size_t len, const char *pk_pathname)
 {
-	return sm2(NULL, result, len, pathname, do_hash);
+	return sm2(pathname, result, len, pk_pathname, do_hash);
 }

@@ -25,7 +25,7 @@ char *base64(const char *a, size_t length, char *result, size_t size);
 
 char *debase64(char *a, size_t length, char *result, size_t size);
 
-char *sha1(const char *filename, char *result, size_t len);
+char *rsa_sha1(const char *filename, char *result, size_t len, const char *ptr);
 
 char *rsa_encrypt(const char *plain_text, char *result, size_t size,
 		const char *pk_filename);

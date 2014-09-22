@@ -53,7 +53,7 @@ char *debase64(char *input, size_t length, char *result, size_t size)
 	return result;
 }
 
-char *sha1(const char *filename, char *result, size_t len)
+char *rsa_sha1(const char *filename, char *result, size_t len, const char*ptr)
 {
 	FILE *f = fopen(filename, "r");
 	if (NULL == f)
@@ -86,7 +86,7 @@ char *sha1(const char *filename, char *result, size_t len)
 	OPENSSL_cleanse(&c, sizeof(c));
 	fclose(f);
 
-	base64(dest, strlen(dest), result, len);
+	base64(dest, sizeof(dest), result, len);
 	return result;
 }
 

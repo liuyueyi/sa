@@ -433,6 +433,13 @@ int init_server(const struct kmd_option *x)
 		return -errno;
 	}
 
+	int flag = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0)
+	{
+		fprintf(stderr, "set reused socket failed!\n");
+		return -errno;
+	}
+
 	if (bind(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0)
 	{
 		fprintf(stderr, "failed to bind socket port:%d\n", port);

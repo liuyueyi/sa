@@ -130,7 +130,7 @@ char *rsa_encrypt(const char *plain_text, char *result, size_t size,
 	}
 
 	RSA_free(rsa);
-	base64((char *) cipher, strlen((char *) cipher), result, size);
+	base64((char *) cipher, len + 1, result, size);
 	free(cipher);
 	return result;
 }

@@ -129,7 +129,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 		return false;
 	}
 	cipher[strlen(cipher)] = '\n';
-	cipher[strlen(cipher)+1] = '\0';
+	cipher[strlen(cipher) + 1] = '\0';
 	if (sendn(sockfd, cipher, strlen(cipher), 0) != strlen(cipher))
 	{
 		print_dbg(0, "send random number error\n");
@@ -148,7 +148,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	char ret[2];
 	if (m == n)
 	{
-		ret[0] = 'Y';		
+		ret[0] = 'Y';
 		print_dbg(1, "verify client legal\n");
 	}
 	else
@@ -158,7 +158,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	}
 	ret[1] = '\n';
 
-	if((len = sendn(sockfd, ret, 2, 0)) < 0)
+	if ((len = sendn(sockfd, ret, 2, 0)) < 0)
 	{
 		print_dbg(1, "send verify result error\n");
 		return false;
@@ -191,7 +191,32 @@ int rename_tempfile(const struct kmd_option *x)
 	return 0;
 }
 
-int receive_volume_key(int sockfd, const struct kmd_option *x)
+int append_tempfile(const struct kmd_option *x)
+{
+	FILE *cf;
+	FILE *tf;
+
+	if (NULL == (cf = fopen(x->config_pathname, "a+"))
+			|| NULL == (tf = fopen(x->temp_pathname, "r")))
+	{
+		record_log("save receive data to %s failed\n", x->config_pathname);
+		print_dbg(0, "save receive data to %s failed\n", x->config_pathname);
+		return -1;
+	}
+
+	flock(fileno(cf), LOCK_EX);
+	char line[LINE_MAX];
+	while (fgets(line, LINE_MAX, tf))
+		fputs(line, cf);
+
+	flock(fileno(cf), LOCK_UN);
+	fclose(cf);
+	fclose(tf);
+	return remove(x->temp_pathname);
+}
+
+int receive_volume_key(int sockfd, const struct kmd_option *x,
+		int (*puc)(const struct kmd_option *x))
 {
 	char buffer[LINE_MAX];
 	int data_len;
@@ -231,9 +256,9 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
 		return record_log("failed to calculate receive data's sha1 digest\n",
 				NULL );
-	}	
+	}
 	print_dbg(1, "sha1=%s\n", result);
-		
+
 	if (strcmp(digest, result) != 0)
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
@@ -241,7 +266,7 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 		return false;
 	}
 
-	return rename_tempfile(x);
+	return puc(x);
 }
 
 int send_volume_key(int sockfd, const struct kmd_option *x)
@@ -259,7 +284,7 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	}
 	print_dbg(1, "the sha1 digest is : %s\n", result);
 	result[28] = '\n';
-	
+
 	if (sendn(sockfd, result, 29, 0) < 0)
 	{
 		print_dbg(0, "send sha1 digest error\n");
@@ -297,8 +322,11 @@ void server_process(int sockfd, struct kmd_option *x)
 	print_dbg(1, "command from ip=%s is \'%c\'\n", client_ip, cmd);
 	switch (cmd)
 	{
+	case 'A':
+		receive_volume_key(sockfd, x, append_tempfile);
+		break;
 	case 'R': // receive file
-		receive_volume_key(sockfd, x);
+		receive_volume_key(sockfd, x, rename_tempfile);
 		break;
 	case 'T': // send file
 		send_volume_key(sockfd, x);

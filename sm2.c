@@ -23,7 +23,7 @@ int sm2(char *buf1, char *buf2, size_t len, const char *pathname,
 
 	ret = crypt(session, buf1, buf2, len, pathname); // encrypt or decrypt
 
-	err_decrypt: SDF_CloseSession(session);
+	SDF_CloseSession(session);
 	err_session: SDF_CloseDevice(handle);
 	err_device: return ret;
 }

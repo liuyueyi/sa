@@ -1,6 +1,6 @@
 PROGRAM = kmc kmd
-OBJS_KM = main.o config.o rsa.o encrypt.o
-OBJS_KMD = kmd.o server.o
+OBJS_KM = main.o config.o encrypt.o rsa.o
+OBJS_KMD = kmd.o server.o encrypt.o rsa.o
 CC = gcc
 CFLAGS = -Wall -g
 # Where to install
@@ -9,10 +9,10 @@ INSTDIR = /usr/local/bin
 all : $(PROGRAM)
 
 kmc : $(OBJS_KM)
-	$(CC) ${CFLAGS} -o kmc $(OBJS_KM) -lcrypto 
+	$(CC) ${CFLAGS} -o kmc $(OBJS_KM) -lcrypto
 
 kmd : $(OBJS_KMD)
-	$(CC) ${CFLAGS} -o kmd $(OBJS_KMD) rsa.o encrypt.o -lcrypto
+	$(CC) ${CFLAGS} -o kmd $(OBJS_KMD) -lcrypto
 
 .c.o:
 	$(CC) $(CFLAGS) -c $^ -o $@

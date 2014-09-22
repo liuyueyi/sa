@@ -23,12 +23,14 @@ struct encrypt_operations * set_encryption_method(const char *method,
 		e->verify = rsa_verify;
 		e->sha1 = rsa_sha1;
 	}
+	/*
 	else if (strcmp(method, "sm") == 0 || strcmp(method, "SM") == 0)
 	{
 		e->encrypt = sm2_encrypt;
 		e->decrypt = sm2_decrypt;
 		e->sha1 = sm2_sha1;
 	}
+	*/
 	else
 	{
 		free(e);

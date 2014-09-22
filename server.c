@@ -122,12 +122,14 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	sprintf(buffer, "%d", n); // generate a random 
 	print_dbg(1, "the randmom is %d\n", n);
 
-	char cipher[200];
-	if (NULL == (*(en->encrypt))(buffer, cipher, 200, x->pk_pathname))
+	char cipher[500];
+	if (NULL == (*(en->encrypt))(buffer, cipher, 500, x->pk_pathname))
 	{
 		print_dbg(0, "encrypt random number error\n");
 		return false;
 	}
+	cipher[strlen(cipher)] = '\n';
+	cipher[strlen(cipher)+1] = '\0';
 	if (sendn(sockfd, cipher, strlen(cipher), 0) != strlen(cipher))
 	{
 		print_dbg(0, "send random number error\n");
@@ -143,16 +145,26 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	int m = atoi(receive);
 
 	print_dbg(1, "(random %d) (receive %d)\n", n, m);
+	char ret[2];
 	if (m == n)
 	{
+		ret[0] = 'Y';		
 		print_dbg(1, "verify client legal\n");
-		return true;
 	}
 	else
 	{
+		ret[0] = 'N';
 		print_dbg(1, "verify client illegal\n");
+	}
+	ret[1] = '\n';
+
+	if((len = sendn(sockfd, ret, 2, 0)) < 0)
+	{
+		print_dbg(1, "send verify result error\n");
 		return false;
 	}
+
+	return ret[0] == 'Y' ? true : false;
 }
 
 int rename_tempfile(const struct kmd_option *x)
@@ -191,6 +203,8 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 		print_dbg(0, "receive data digest error\n");
 		return data_len;
 	}
+	digest[28] = '\0';
+	print_dbg(1, "digest=%s\n", digest);
 
 	FILE *f;
 	if ((f = fopen(x->temp_pathname, "w")) == NULL )
@@ -212,18 +226,19 @@ int receive_volume_key(int sockfd, const struct kmd_option *x)
 	}
 
 	char result[29];
-	if (NULL == (*(en->sha1))(x->config_pathname, result, 29, x->pk_pathname))
+	if (NULL == (*(en->sha1))(x->temp_pathname, result, 30, x->pk_pathname))
 	{
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
 		return record_log("failed to calculate receive data's sha1 digest\n",
 				NULL );
-	}
-
+	}	
+	print_dbg(1, "sha1=%s\n", result);
+		
 	if (strcmp(digest, result) != 0)
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
 		record_log("receive data's integrity verify failed\n", NULL );
-		return -1;
+		return false;
 	}
 
 	return rename_tempfile(x);
@@ -234,17 +249,18 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	FILE *f;
 	int size;
 	char buffer[LINE_MAX];
-	char result[29];
+	char result[30];
 
 	// calculate and send sha1 digest for integrity verify
-	if (NULL == (*(en->sha1))(x->config_pathname, result, 29, x->pk_pathname))
+	if (NULL == (*(en->sha1))(x->config_pathname, result, 30, x->pk_pathname))
 	{
 		print_dbg(0, "calculate sha1 digest error\n");
 		return record_log("calculate sha1 digest error\n", NULL );
 	}
 	print_dbg(1, "the sha1 digest is : %s\n", result);
-
-	if (sendn(sockfd, result, 28, 0) < 0)
+	result[28] = '\n';
+	
+	if (sendn(sockfd, result, 29, 0) < 0)
 	{
 		print_dbg(0, "send sha1 digest error\n");
 		return record_log("send sha1 digest error\n", NULL );

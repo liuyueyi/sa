@@ -15,8 +15,8 @@ struct option const long_options[] =
 
 #define CONFIG_FILENAME "rsa_key.conf"
 #define TEMP_FILENAME "rsa_key.conf.tm"
-#define SK_FILENAME "rsa_priv.key"
-#define PK_FILENAME "rsa_pub.key"
+#define SK_FILENAME "priv.key"
+#define PK_FILENAME "pub.key"
 #define DEFAULT_PORT 10033
 
 extern int dbg_level;

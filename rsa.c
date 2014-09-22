@@ -86,7 +86,8 @@ char *rsa_sha1(const char *filename, char *result, size_t len, const char*ptr)
 	OPENSSL_cleanse(&c, sizeof(c));
 	fclose(f);
 
-	base64(dest, sizeof(dest), result, len);
+	base64(dest, strlen(dest), result, len);
+	// printf("the result %s\n",result);
 	return result;
 }
 

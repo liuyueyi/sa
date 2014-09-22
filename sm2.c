@@ -17,7 +17,7 @@ int sm2(char *buf1, char *buf2, size_t len, const char *pathname,
 	ret = SDF_OpenDevice(&handle);
 	if (ret)
 	{
-		fprintf(stderr, "could open decvice (err=%d)\n", ret);
+		fprintf(stderr, "could open device (err=%d)\n", ret);
 		goto err_device;
 	}
 

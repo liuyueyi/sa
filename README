@@ -96,4 +96,5 @@ Server command:
   --'R': receive the data form kmc, and replace the the original key with the received data
   --'T': send the key file's data to kmc
  
- attention: when receive data from kmc or send data to kmc, in order to ensure the data is corrected and integrity, the produce calculate the sha1 digest. So client should send sha1 digest before data and should verify the receive data's sha1 digest 	
+Attention:
+  when receive data from kmc or send data to kmc, in order to ensure the data is corrected and integrity, the produce calculate the sha1 digest. So client should send sha1 digest before data and should verify the receive data's sha1 digest 	

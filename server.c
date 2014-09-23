@@ -59,7 +59,10 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 		}
 	}
 	else if(size < len)
+	{
+		printf("send not complete\n");
 		return size + sendn(fd, buf + size, len - size, flag);
+	}
 
 	return size;
 }
@@ -207,7 +210,7 @@ bool in_file(FILE *f, char *line)
 	char buf[LINE_MAX];
 	while(fgets(buf, LINE_MAX, f))
 	{
-		if(strcmp(buf, line) == 0)
+		if(strstr(buf, line) != NULL)
 		{
 			tag = true;
 			break;

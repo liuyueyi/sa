@@ -59,10 +59,7 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 		}
 	}
 	else if(size < len)
-	{
-		printf("send not complete\n");
 		return size + sendn(fd, buf + size, len - size, flag);
-	}
 
 	return size;
 }

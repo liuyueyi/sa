@@ -44,7 +44,7 @@ int read_pk(ECCrefPublicKey *pk, const char *pk_pathname)
 	FILE *pf;
 	if (NULL == (pf = fopen(pk_pathname, "r")))
 	{
-		fprintf(stderr, "save key error (pk=%s)\n", pk_pathname);
+		fprintf(stderr, "read public key error (pk=%s)\n", pk_pathname);
 		return -1;
 	}
 
@@ -92,7 +92,7 @@ int read_sk(ECCrefPrivateKey *sk, const char *sk_pathname)
 	FILE *sf;
 	if (NULL == (sf = fopen(sk_pathname, "r")))
 	{
-		fprintf(stderr, "save key error (sk=%s)\n", sk_pathname);
+		fprintf(stderr, "read private key error (sk=%s)\n", sk_pathname);
 		return -1;
 	}
 

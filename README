@@ -50,6 +50,41 @@ Base64 Process:
 	 BIO_get_mem_ptr(b64, &bptr);
      BIO_free_all(bio);
 
+
+REGISTER SM2 ALGORITHM
+----------------------
+Modify Makefile:
+  original:
+	OBJS_KM = main.o config.o rsa.o encrypt.o
+	
+	kmc : $(OBJS_KM)
+	$(CC) ${CFLAGS} -o kmc $(OBJS_KM) -lcrypto 
+
+	kmd : $(OBJS_KMD)
+	$(CC) ${CFLAGS} -o kmd $(OBJS_KMD) rsa.o encrypt.o -lcrypto
+
+  new:
+	OBJS_KM = main.o config.o rsa.o encrypt.o sm2.o
+	
+	kmc : $(OBJS_KM)
+	$(CC) -static ${CFLAGS} -o kmc $(OBJS_KM) -lcrypto -lld -L. -lecc
+
+	kmd : $(OBJS_KMD)
+	$(CC) -static ${CFLAGS} -o kmd $(OBJS_KMD) rsa.o encrypt.o sm2.o -lcrypto -lld -L. -lecc
+
+Modify encrypt.c
+	function : set_encryption_method()
+		after if statement add next code or uncomment the code
+		else if (strcmp(method, "sm") == 0 || strcmp(method, "SM") == 0)
+		{
+			e->encrypt = sm2_encrypt;
+			e->decrypt = sm2_decrypt;
+			e->sha1 = sm2_sha1;
+		}
+
+Modify encrypt.h
+	add:
+	#include "sm2.h"
  
 CONFIG FILE FORMAT
 ------------------ 

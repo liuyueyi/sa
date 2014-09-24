@@ -14,9 +14,9 @@ int save_key(ECCrefPublicKey *pk, const char *pk_pathname, ECCrefPrivateKey *sk,
 	}
 
 	fprintf(pf, "%d\n", pk->bits);
-	char bx[1000], by[1000];
-	if (NULL == base64(pk->x, ECCref_MAX_LEN, bx, 1000)
-			|| NULL == base64(pk->y, ECCref_MAX_LEN, by, 1000))
+	char bx[300], by[300];
+	if (NULL == base64(pk->x, ECCref_MAX_LEN, bx, 300)
+			|| NULL == base64(pk->y, ECCref_MAX_LEN, by, 300))
 	{
 		fprintf(stderr, "base key error\n");
 		return -1;
@@ -28,8 +28,8 @@ int save_key(ECCrefPublicKey *pk, const char *pk_pathname, ECCrefPrivateKey *sk,
 	fclose(pf);
 
 	fprintf(sf, "%d\n", sk->bits);
-	char bd[1000];
-	if (NULL == base64(sk->D, ECCref_MAX_LEN, bd, 1000))
+	char bd[300];
+	if (NULL == base64(sk->D, ECCref_MAX_LEN, bd, 300))
 	{
 		fprintf(stderr, "base private key error\n");
 		return -1;
@@ -158,8 +158,8 @@ int str_to_cipher(ECCCipher *cipher, char *buf, size_t len)
 int cat_str(char *line, size_t len, char *buf, size_t *count)
 {
 	*count += strlen(buf) + 1;
-	printf("count=%d %s\n", *count, buf);
-	if (*count > len)
+	int ans = *count - len;
+	if (ans > 0)
 	{
 		fprintf(stderr, "base cipher memory not enouth (size=%d)\n", len);
 		return -1;
@@ -172,9 +172,9 @@ int cat_str(char *line, size_t len, char *buf, size_t *count)
 int cipher_to_str(ECCCipher *cipher, char *line, size_t len)
 {
 	int count = 0;
-	char buf[1000];
+	char buf[300];
 	strcpy(line, "");
-	if (NULL == base64(cipher->x, ECCref_MAX_LEN, buf, 1000))
+	if (NULL == base64(cipher->x, ECCref_MAX_LEN, buf, 300))
 	{
 		fprintf(stderr, "base cipher x error\n");
 		return -1;
@@ -182,7 +182,7 @@ int cipher_to_str(ECCCipher *cipher, char *line, size_t len)
 	if (-1 == cat_str(line, len, buf, &count))
 		return -1;
 
-	if (NULL == base64(cipher->y, ECCref_MAX_LEN, buf, 1000))
+	if (NULL == base64(cipher->y, ECCref_MAX_LEN, buf, 300))
 	{
 		fprintf(stderr, "base cipher y error\n");
 		return -1;
@@ -190,7 +190,7 @@ int cipher_to_str(ECCCipher *cipher, char *line, size_t len)
 	if (-1 == cat_str(line, len, buf, &count))
 		return -1;
 
-	if (NULL == base64(cipher->C, ECCref_MAX_LEN, buf, 1000))
+	if (NULL == base64(cipher->C, ECCref_MAX_LEN, buf, 300))
 	{
 		fprintf(stderr, "base cipher C error\n");
 		return -1;
@@ -198,7 +198,7 @@ int cipher_to_str(ECCCipher *cipher, char *line, size_t len)
 	if (-1 == cat_str(line, len, buf, &count))
 		return -1;
 
-	if (NULL == base64(cipher->M, ECCref_MAX_LEN, buf, 1000))
+	if (NULL == base64(cipher->M, ECCref_MAX_LEN, buf, 300))
 	{
 		fprintf(stderr, "base cipher M error\n");
 		return -1;

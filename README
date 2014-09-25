@@ -143,8 +143,16 @@ SERVER COMMAND
   
   If you want to print the debug infomation, do:
         sudo kmd -d=[0..2]
-
-        
+  
+  Other:
+  	--ip: the server ip
+  	--port: the server port
+  	--config_pathname: volume key file pathname, default = key.conf  
+    --pk_pathname: kmc's public key pathname, default = kmc_pub.key
+  
+  Attention:
+    for config_pathname and pk_pathname, the server will auto add encrypt algorithm method before the filename. For example, if the kmc select "rsa" algorithm, then the config_pathname will be rsa_key.conf and kmc public key pathname will be rsa_kmc_pub.key  
+    
 SERCER PROCESS FLOW
 -------------------
   --to connect the server, the client should first send the encrypted method(such as:rsa, sm),then the server will generate a random number which is less than 1000, and encrypt the number by the select encrypted method.

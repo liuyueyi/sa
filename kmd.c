@@ -59,25 +59,27 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 			stdout);
 	fputs(
 			("\
-  -c, --config_pathname key file pathname\n\
+  -c, --config_pathname key file pathname\033[47;31m[default=key.conf]\033[0m\n\
                         egg:\n\
-                          set the volume key pathname:\n\
+                          if the original pathname = rsa_key.conf, then set volume key pathname like this:\n\
                           kmd -c key.conf\n\
 "),
 			stdout);
 	fputs(
 			("\
-  -P, --pk_pathname     public key pathname\n\
+  -P, --pk_pathname     public key pathname\033[47;31m[default=kmc_pub.key]\033[0m\n\
                         egg:\n\
-                          kmd -P rsa_pub.key\n\
+                          if the original pk pathname is rsa_pub.key, then set pk_pathname like this:\n\
+                          kmd -P kmc_pub.key\n\
 "),
 			stdout);
 
 	fputs(
 			("\
-  -S, --sk_pathname     secret key pathname\n\
+  -S, --sk_pathname     secret key pathname\033[47;31m[default=kmc_priv.key]\033[0m\n\
                         egg:\n\
-                          kmd -S rsa_priv.key\n\
+                          if the original pk pathname is rsa_pub.key, then set pk_pathname like this:\n\\n\
+                          kmd -S kmc_priv.key\n\
 "),
 			stdout);
 

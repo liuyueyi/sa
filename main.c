@@ -260,7 +260,7 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 			stdout);
 	fputs(
 			("\
-  -l, --list            list the information of the volume .\n\
+  -l, --list            list the information of the volume\n\
                         egg:\n\
                           kmc -l \n\
                           kmc -l -i=10000004 -u \n\
@@ -288,7 +288,7 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 			stdout);
 	fputs(
 			("\
-  -c, --config_pathname key file pathname[default=rsa_key.conf]\n\
+  -c, --config_pathname key file pathname\033[47;31m[default=rsa_key.conf]\033[0m\n\
                         pathname must start with [method]_ such as rsa_key.conf\n\
                         egg:\n\
                           delete the volume key relation:\n\
@@ -297,7 +297,7 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 			stdout);
 	fputs(
 			("\
-  -P, --pk_pathname     public key pathname[default=rsa_pub.key]\n\
+  -P, --pk_pathname     public key pathname\033[47;31m[default=rsa_pub.key]\033[0m\n\
                         egg:\n\
                          print the volume key:\n\
                            kmc -l -i=10000004 -k -P rsa_pub.key\n\
@@ -306,7 +306,7 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 
 	fputs(
 			("\
-  -S, --sk_pathname     secrete key pathname[default=rsa_priv.key]\n\
+  -S, --sk_pathname     secrete key pathname\033[47;31m[default=rsa_priv.key]\033[0m\n\
                         egg:\n\
                          print the volume key:\n\
                           kmc -l -i=10000004 -k -S rsa_priv.key\n\

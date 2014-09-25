@@ -8,14 +8,13 @@
 #include "encrypt.h"
 
 struct encrypt_operations * set_encryption_method(const char *method,
-		char *sk_filename, char *pk_filename)
+		const char *sk_filename, const char *pk_filename)
 {
 	struct encrypt_operations *e = (struct encrypt_operations *) malloc(
 			sizeof(struct encrypt_operations));
 	if (NULL == e)
 		return NULL ;
 
-	int len = strlen(method);
 	if (strlen(sk_filename) >= PATH_MAX || strlen(pk_filename) >= PATH_MAX)
 	{
 		fprintf(stderr, "key pathname too long(sk=%s pk=%s)\n", sk_filename,

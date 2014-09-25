@@ -31,6 +31,6 @@ struct encrypt_operations
 };
 
 struct encrypt_operations *set_encryption_method(const char *method,
-		char *sk_filename, char *pk_filename);
+		const char *sk_filename, const char *pk_filename);
 
 #endif /* ENCRYPT_H_ */

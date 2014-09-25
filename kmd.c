@@ -15,7 +15,7 @@ struct option const long_options[] =
 
 #define CONFIG_FILENAME "key.conf"
 #define TEMP_FILENAME "key.conf.tm"
-#define SK_FILENAME "kmc_priv.key"
+#define SK_FILENAME "priv.key"
 #define PK_FILENAME "kmc_pub.key"
 #define DEFAULT_PORT 10033
 

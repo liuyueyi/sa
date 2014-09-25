@@ -152,6 +152,7 @@ SERVER COMMAND
   
   Attention:
     for config_pathname and pk_pathname, the server will auto add encrypt algorithm method before the filename. For example, if the kmc select "rsa" algorithm, then the config_pathname will be rsa_key.conf and kmc public key pathname will be rsa_kmc_pub.key  
+
     
 SERCER PROCESS FLOW
 -------------------

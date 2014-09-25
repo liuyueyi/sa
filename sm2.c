@@ -243,7 +243,7 @@ int do_encrypt(void *handle, char *plain_text, char *result, size_t len,
 	int ret = 0;
 	unsigned int uiAlgID = SGD_SM2_3;
 	ECCrefPublicKey pucPublicKey;
-	if (-1 == read_pk(pucPublicKey, pk_pathname))
+	if (-1 == read_pk(&pucPublicKey, pk_pathname))
 		return -1;
 
 	ECCCipher pucEncData;
@@ -270,7 +270,7 @@ int do_decrypt(void *session, char *cipher, char *result, size_t len,
 	ECCrefPrivateKey pucPrivateKey;
 	ECCCipher pucEncData;
 
-	if (-1 == read_sk(pucPrivateKey, sk_pathname))
+	if (-1 == read_sk(&pucPrivateKey, sk_pathname))
 		return -1;
 
 	// convert the string cipher to struct cipher
@@ -295,7 +295,7 @@ int do_hash(void *session, char *pathname, char *buf2, size_t len,
 	unsigned char *pucID = "501"; // communicate with KMC, can be any string
 	size_t uiIDLength = strlen((char *) pucID);
 
-	if (-1 == read_pk(pucPublicKey, pk_pathname))
+	if (-1 == read_pk(&pucPublicKey, pk_pathname))
 		return -1;
 
 	FILE *f = fopen(pathname, "r");

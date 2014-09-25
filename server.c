@@ -170,8 +170,8 @@ bool verify_client(int sockfd, struct kmd_option *x)
 		return false;
 	}
 
-	char receive[20];
-	if ((len = recvn(sockfd, receive, 20, 0)) < 0)
+	char receive[200];
+	if ((len = recvn(sockfd, receive, 200, 0)) < 0)
 	{
 		print_dbg(0, "receive random number error\n");
 		return false;

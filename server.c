@@ -164,7 +164,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	size_t c_len = strlen(cipher);
 	cipher[c_len] = '\n';
 	cipher[c_len + 1] = '\0';
-	if (sendn(sockfd, cipher, c_len, 0) != c_len)
+	if (sendn(sockfd, cipher, c_len + 1, 0) != c_len + 1)
 	{
 		print_dbg(0, "send random number error\n");
 		return false;

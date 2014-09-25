@@ -85,18 +85,47 @@ Modify encrypt.c
 Modify encrypt.h
 	add:
 	#include "sm2.h"
+
  
 CONFIG FILE FORMAT
 ------------------ 
 Config file name should be started with encryption method such as "rsa_xxx" or "sm_xxx", the file name tell you which encrypt method to use!
 Config file saved all the id, key and uuid information. Each line contained valied id, key and uuid. One id can match many uuid, however one uuid can only match one id. The line start with '#' is Comment lines, you can ignore it.
+  ## comment: start with '#'
+  ## style: plain text
+  ## format: <unique-identifier> <encrypted-key> [uuid,...]
+  ## uuid has upper limit for one key, the upper limit is 20
+	eg:
+	  3b126517-e092-45eb-ae27-9bbc9b7419e6	WfKYAtdkNhzQzmJsg1MqXrfYnq+q0dYL8OelBOQwMAoP4W976TYTe+2hsTGoPO6o5EWlfxni0hslfk+ZXQsNNkQOPD8ANgS6aU/2Yv4Jxv/30HmKJL6PBokF2GwftklVPHz85u7uLpZRWHjQT4HZ1/b1bhm92BYVdDcyTSztdXw= 550E8400-E29B-11D4-A716-9sdieasdfewr,560E8400-E29B-11D4-A716-9sdilkjiuy67
+	  id = 3b126517-e092-45eb-ae27-9bbc9b7419e6
+	  key = WfKYAtdkNhzQzmJsg1MqXrfYnq+q0dYL8OelBOQwMAoP4W976TYTe+2hsTGoPO6o5EWlfxni0hslfk+ZXQsNNkQOPD8ANgS6aU/2Yv4Jxv/30HmKJL6PBokF2GwftklVPHz85u7uLpZRWHjQT4HZ1/b1bhm92BYVdDcyTSztdXw=
+	  uuid = 550E8400-E29B-11D4-A716-9sdieasdfewr,560E8400-E29B-11D4-A716-9sdilkjiuy67
+	
+	attention: 
+	  id, key and uuid are splited by space; uuid and uuid are splited by ',', there should be no space during tow uuid
 
+
+KMC COMMAND
+-----------
+  list information:
+	kmc -l -i=10000004 -u 
+    kmc -l -u=550E8400-E29B-11D4-A716-44665544asdf 
+    kmc -l -i=10000004 -k
+  set the volume key for a volume:
+    kmc -s -i=10000004 -u=550E8400-E29B-11D4-A716-44665544
+  remove a volume's  volume key:
+    kmc -r -u=550E8400-E29B-11D4-A716-44665544asdf
+  
+  other command:  
 	--id: the volume key's unique id
 	--key: the cipher of Symmetric key	
 	--uuid: the volume's unique id
 	--sk_pathname: private key pathname
 	--pk_pathname: public key pathname
-	
+  
+  you can get more information by input:
+    kmc -h
+
 
 SERVER COMMAND
 --------------

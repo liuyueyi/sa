@@ -7,7 +7,7 @@
  */
 #include "config.h"
 
-#define UUID_MAX_NUM  10
+#define UUID_MAX_NUM  20
 #define string_space " \n\t\f\r\v"
 char *get_column(char *line, int col)
 {

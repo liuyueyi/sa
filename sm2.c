@@ -161,7 +161,7 @@ int cat_str(char *line, size_t len, char *buf, size_t *count)
 	int ans = *count - len;
 	if (ans > 0)
 	{
-		fprintf(stderr, "base cipher memory not enouth (size=%d)\n", len);
+		fprintf(stderr, "base cipher memory not enough (size=%d)\n", len);
 		return -1;
 	}
 	strcat(line, buf);

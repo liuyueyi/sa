@@ -23,14 +23,14 @@ struct encrypt_operations
 	int (*verify)(const char *text, const char *signature,
 			const char *pk_filename);
 
-	char *(*sha1)(const char *filename, char *result, size_t len, const char *ptr);
+	char *(*sha1)(const char *filename, char *result, size_t len,
+			const char *ptr);
 
 	char sk_filename[PATH_MAX];
 	char pk_filename[PATH_MAX];
 };
 
-
-struct encrypt_operations *set_encryption_method(const char *method, const char *sk_filename,
-		const char *pk_filename);
+struct encrypt_operations *set_encryption_method(const char *method,
+		char *sk_filename, char *pk_filename);
 
 #endif /* ENCRYPT_H_ */

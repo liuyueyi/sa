@@ -15,8 +15,8 @@ struct option const long_options[] =
 
 #define CONFIG_FILENAME "key.conf"
 #define TEMP_FILENAME "key.conf.tm"
-#define SK_FILENAME "priv.key"
-#define PK_FILENAME "kmc_pub.key"
+#define SK_FILENAME "priv.key" // sa's private key, the full name is rsa_priv.key or sm_priv.key
+#define PK_FILENAME "kmc_pub.key" // kmc's public key, the full name is rsa_kmc_pub.key or sm_kmc_pub.key
 #define DEFAULT_PORT 10033
 
 extern int dbg_level;

@@ -54,7 +54,7 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 		else
 		{
 			record_log("send data to ip:%s error\n", client_ip);
-			print_dbg(0, "receive data from ip:%s error\n", client_ip);
+			print_dbg(0, "send data to ip:%s error\n", client_ip);
 			return -errno;
 		}
 	}
@@ -141,8 +141,17 @@ bool verify_client(int sockfd, struct kmd_option *x)
 {
 	char buffer[20];
 	int len = 0;
-
-	if ((len = recvn(sockfd, buffer, 20, 0)) < 0)
+	/*
+	 * verify KMC's identity
+	 * 1. receive the encrypt method(such as: rsa, sm)
+	 * 2. generate a random number: n
+	 * 3. encrypt the random with KMC's public key
+	 * 4. receive KMC return the random:m
+	 * 5. compare n and m
+	 * 6. n == m : KMC legal, and response "Y\n" to KMC
+	 * 7. n != m : KMC illegal, and response "N\n" to KMC
+	 */
+	if ((len = recvn(sockfd, buffer, 20, 0)) < 0) // receive encrypt method
 	{
 		print_dbg(0, "receive connect protocol error\n");
 		return false;
@@ -170,35 +179,63 @@ bool verify_client(int sockfd, struct kmd_option *x)
 		return false;
 	}
 
-	char receive[200];
-	if ((len = recvn(sockfd, receive, 200, 0)) < 0)
+	char receive[5];
+	if ((len = recvn(sockfd, receive, 5, 0)) < 0) //receive the plain number
 	{
 		print_dbg(0, "receive random number error\n");
 		return false;
 	}
 	int m = atoi(receive);
-
 	print_dbg(1, "(random %d) (receive %d)\n", n, m);
-	char ret[2];
-	if (m == n)
-	{
-		ret[0] = 'Y';
-		print_dbg(1, "verify client legal\n");
-	}
-	else
-	{
-		ret[0] = 'N';
-		print_dbg(1, "verify client illegal\n");
-	}
-	ret[1] = '\n';
 
-	if ((len = sendn(sockfd, ret, 2, 0)) < 0)
+	char ret[2] =
+	{ 'Y', '\n' };
+	if (m != n)
+		ret[0] = 'Y';
+
+	print_dbg(1, "verify result(Y:succeed / N:failed): %s", ret);
+	if (ret[0] == 'N' || (len = sendn(sockfd, ret, 2, 0)) < 0)
 	{
-		print_dbg(1, "send verify result error\n");
+		print_dbg(1, "verify result error\n");
 		return false;
 	}
 
-	return ret[0] == 'Y' ? true : false;
+	/*
+	 *  below: KMC verify sa's identity
+	 *  1. receive cipher
+	 *  2. decrypt the cipher with sa's private key
+	 *  3. send the plain text to KMC
+	 *  4. receive kmc's response (Y:succeed/N:fail)
+	 */
+	char num[200];
+	if ((len = recvn(sockfd, num, 200, 0)) < 0)
+	{
+		print_dbg(0, "receive kmc's cipher random number error\n");
+		return false;
+	}
+	char ans[50];
+	if (NULL == (*(en->decrypt))(num, ans, 50, x->sk_pathname))
+	{
+		print_dbg(0, "decrypt the kmc's random number error\n");
+		return false;
+	}
+	print_dbg(0, "the receive random number is %s\n", ans);
+	len = strlen(ans);
+	ans[len] = '\n';
+	if ((len = sendn(sockfd, ans, len + 1, 0)) < 0)
+	{
+		print_dbg(0, "send kmc random number error\n");
+		return false;
+	}
+	char r;
+	if ((len = recvn(sockfd, &r, 1, 0)) < 0 || (r != 'Y' && r != 'y'))
+	{
+		print_dbg(0, "receive kmc's response error(ret=%c)\n", r);
+		return false;
+	}
+	print_dbg(1, "receive kmc's response = %c\n", r);
+
+	return r == 'Y' ? true : false;
 }
 
 int rename_tempfile(const struct kmd_option *x)
@@ -318,11 +355,20 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 	}
 	print_dbg(1, "sha1=%s\n", result);
 
+	char ret[2] =
+	{ 'Y', '\0' };
 	if (strcmp(digest, result) != 0)
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
 		record_log("receive data's integrity verify failed\n", NULL );
-		return false;
+		ret[0] = 'N';
+	}
+	if (sendn(sockfd, ret, 2, 0) < 0)
+	{
+		print_dbg(0, "response code error(ret=%c)\n", ret[0]);
+		record_log("response code error(ret=%c)\n", ret[0]);
+		remove(x->temp_pathname);
+		return -1;
 	}
 
 	return puc(x);
@@ -365,6 +411,15 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 
 	flock(fileno(f), LOCK_UN);
 	fclose(f);
+
+	if (sendn(sockfd, "##end\n", 6, 0) < 0)
+		return -1;
+
+	char ret;
+	if (recvn(sockfd, &ret, 1, 0) < 0 || ret != 'Y')
+		return record_log("kmc receive volume key error\n", NULL );
+
+	print_dbg(0, "kmc response(Y/N) = %c\n", ret);
 	return size;
 }
 

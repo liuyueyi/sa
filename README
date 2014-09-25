@@ -156,18 +156,42 @@ SERVER COMMAND
     
 SERCER PROCESS FLOW
 -------------------
-  --to connect the server, the client should first send the encrypted method(such as:rsa, sm),then the server will generate a random number which is less than 1000, and encrypt the number by the select encrypted method.
-  --server return the cipher to the client, then client should decrypt the cipher by it's private key, after this client return the nunmber to server
-  --server verify the receive number, and compare the two number
-  --not equal
-  		then return 'N', then close the socket
-  -- equal
-    	start to transport data
+  verify kmc's identity:
+    1. receive the encrypt method(such as: rsa, sm)
+    2. generate a random number: n
+    3. encrypt the random with KMC's public key
+    4. receive KMC return the random:m
+    5. compare n and m
+    6. n == m : KMC legal, and response "Y\n" to KMC
+    7. n != m : KMC illegal, and response "N\n" to KMC
+  
+  kmc verify sa's identity:
+    1. receive cipher
+    2. decrypt the cipher with sa's private key
+    3. send the plain text to KMC
+    4. receive kmc's response (Y:succeed/N:fail)
 
-Server command:
-  --'A': receive the data from kmc, and save it append to the original key file
-  --'R': receive the data form kmc, and replace the the original key with the received data
-  --'T': send the key file's data to kmc
+  kmc's request:
+    'A': receive the data from kmc, and save it append to the original key file
+    'R': receive the data form kmc, and replace the the original key with the received data
+    'T': send the key file's data to kmc
+  
+  send volume key file to kmc:
+    1. calculate the volume key file's pathname by method(such as method is rsa, default key file is key.conf, then the expect filename is rsa_key.conf)
+    2. calculate volume key file's sha1 digest
+    3. send digest to kmc
+    4. send key file content to kmc
+    5. wait kmc's response(Y:succeed / N:failed)
+  
+  receive volume key from kmc:
+  	1. receive the sha1 digest
+  	2. receive the key content
+  	3. save the key in temp_file
+  	4. calculate the tem_file's sha1 digest
+  	5. compare the two digest  	
+  	6. if equal, then response "Y\n"; else response "N\n"
+  	7. append the temp_file's content to original key file or replace it
+    
  
 Attention:
   when receive data from kmc or send data to kmc, in order to ensure the data is corrected and integrity, the produce calculate the sha1 digest. So client should send sha1 digest before data and should verify the receive data's sha1 digest 	

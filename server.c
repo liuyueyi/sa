@@ -58,7 +58,7 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 			return -errno;
 		}
 	}
-	else if(size < len)
+	else if (size < len)
 		return size + sendn(fd, buf + size, len - size, flag);
 
 	return size;
@@ -90,21 +90,51 @@ void remove_space(char *buf, size_t len)
 	buf[j] = '\0';
 }
 
+char *insert_method(char *buf, size_t size, char *method, size_t m_len)
+{
+	char temp[PATH_MAX];
+	strcpy(temp, buf);
+
+	int len = strlen(buf);
+	if (len + m_len + 2 > size)
+	{
+		fprintf(stderr, "pathname too long (%s)\n", buf);
+		return NULL ;
+	}
+
+	while (len > 0 && buf[len - 1] != '/')
+		len--;
+	buf[len] = '\0';
+	strcat(buf, method);
+	strcat(buf, "_");
+	strcat(buf, temp + len);
+	return buf;
+}
+
 #ifndef EN
 #define EN
 struct encrypt_operations *en;
 #endif
-bool init_encrypt_method(char *buffer, struct kmd_option *x)
+bool init_encrypt_method(char *method, size_t size, struct kmd_option *x)
 {
-	remove_space(buffer, 20);
-	en = set_encryption_method(buffer, x->sk_pathname, x->pk_pathname);
-	if (en == NULL )
-	{
-		print_dbg(0, "encrypt method(%s) error\n", buffer);
-		record_log("encrypt method(%s) error\n", buffer);
-		return false;
-	}
+	remove_space(method, size);
+	int len = strlen(method);
+	if ((NULL == insert_method(x->pk_pathname, PATH_MAX, method, len))
+			|| (NULL == insert_method(x->sk_pathname, PATH_MAX, method, len))
+			|| (NULL == insert_method(x->config_pathname, PATH_MAX, method, len))
+			|| (NULL == insert_method(x->temp_pathname, PATH_MAX, method, len)))
+		goto err;
+
+	en = set_encryption_method(method, x->sk_pathname, x->pk_pathname);
+	if (NULL == en)
+		goto err;
+
 	return true;
+
+	err:
+	print_dbg(0, "encrypt method(%s) error\n", method);
+	record_log("encrypt method(%s) error\n", method);
+	return false;
 }
 
 bool verify_client(int sockfd, struct kmd_option *x)
@@ -117,7 +147,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 		print_dbg(0, "receive connect protocol error\n");
 		return false;
 	}
-	if (!init_encrypt_method(buffer, x))
+	if (!init_encrypt_method(buffer, 20, x))
 		return false;
 
 	srand((int) time(0));
@@ -197,17 +227,16 @@ int rename_tempfile(const struct kmd_option *x)
 
 /**
  * judge if line is in the file
- */
-bool in_file(FILE *f, char *line)
+ */bool in_file(FILE *f, char *line)
 {
 	bool tag = false;
-	if(-1 == fseek(f, 0, SEEK_SET))
+	if (-1 == fseek(f, 0, SEEK_SET))
 		in_file(f, line);
 
 	char buf[LINE_MAX];
-	while(fgets(buf, LINE_MAX, f))
+	while (fgets(buf, LINE_MAX, f))
 	{
-		if(strstr(buf, line) != NULL)
+		if (strstr(buf, line) != NULL )
 		{
 			tag = true;
 			break;
@@ -235,7 +264,7 @@ int append_tempfile(const struct kmd_option *x)
 	while (fgets(line, LINE_MAX, tf))
 	{
 		// if exist, then ignore this volume key
-		if(!in_file(cf, line))
+		if (!in_file(cf, line))
 			fputs(line, cf);
 	}
 

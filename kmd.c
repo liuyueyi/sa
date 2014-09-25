@@ -13,10 +13,10 @@ struct option const long_options[] =
 { "debug", required_argument, NULL, 'd' },
 { NULL, 0, NULL, 0 } };
 
-#define CONFIG_FILENAME "rsa_key.conf"
-#define TEMP_FILENAME "rsa_key.conf.tm"
-#define SK_FILENAME "priv.key"
-#define PK_FILENAME "pub.key"
+#define CONFIG_FILENAME "key.conf"
+#define TEMP_FILENAME "key.conf.tm"
+#define SK_FILENAME "kmc_priv.key"
+#define PK_FILENAME "kmc_pub.key"
 #define DEFAULT_PORT 10033
 
 extern int dbg_level;

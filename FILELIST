@@ -1,0 +1,62 @@
+# source code file description
+--config.c config.h    
+    include the functions to response the request to the volume key file
+  function:
+   	do_list_xxx() : list the information(such as volume key's id, plain key, volume UUID) of the volume key
+   	do_remove_xx(): delete the volume key or the map of volume key and volume
+   	do_update_xx(): update the map of volume key and volume
+   	do_getline()  : read one line from the volume key file
+   	do_putline()  : write one line to the volume key file
+   	print_xxxx()  : print the related information(such as volume key's id, plain key and volume UUID)
+   
+--rsa.c rsa.h
+	include RSA encrypt/decrypt algorithm. This is implemented by openssl
+  function:
+	base64()      : base the unsigned char* to string
+	debase64()    : debase the string to original unsigned char*
+	rsa_encrypt() : encrypt xxx by public key  
+	rsa_decrypt() : decrypt xxx by private key
+	rsa_sha1()    : calculate the sha1 digest of the file
+
+--sm2.c sm2.h
+	include sm2 encrypt/decrypt algorithm. This is implemented by call encryption card
+  function:	
+	read_pk()     : read public key from public key file
+	read_sk()     : read private key from private key file
+	sm2_encrypt() : encrypt xxx by public key
+	sm2_decrypt() : decrypt xxx by private key
+	sm2_sha1()    : calculate the sha1 digest of the file
+	
+--encrypt.c encrypt.h
+	the uniform encrypt/decrypt interface for the system
+  function:
+    set_encryption_method() : set the specific encrypt algorithm, and return the encryption struct which contains the encrypt, decrypt and sha1 function
+
+--main.c
+	the main function of the sa client for user
+	
+
+--server.c server.h
+    the sa server, include send volume key file to kmc and receive the volume key from the kmc
+  function:
+    init_server()        : init the server socket
+    server_work()        : loop to accept kmc's request
+    verify_client()      : verify client the kmc's identity
+    server_process()     : judge the kmc's request(A: receive new volume key; R: recover the volume key; T: back up the volume key)
+    receive_volume_key() : receive data from the kmc(should calculate the sha1 digest to ensure receive the correct data)
+    send_volume_key()    : send volume key to kmc
+
+--kmd.c 
+	the server main function
+	
+--eccapi.h libecc.a
+    sm2 head file and static library
+    
+--rsa_pub.key rsa_priv.key
+    sa's rsa private key and public key
+
+--rsa_kmc_pub.key
+    kmc's rsa public key
+
+--rsa_key.conf
+    volume key file

@@ -494,6 +494,7 @@ void server_process(int sockfd, struct kmd_option *x)
 		break;
 	default:
 		record_log("command \'%c\' is illegal\n", (void *) cmd);
+		break;
 	}
 }
 

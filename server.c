@@ -35,11 +35,7 @@ int recvn(int fd, char *buf, size_t len, int flag)
 		if (errno == EINTR)
 			return recvn(fd, buf, len, flag);
 		else
-		{
-			record_log("receive data from ip:%s error\n", client_ip);
-			print_dbg(0, "receive data from ip:%s error\n", client_ip);
 			return -errno;
-		}
 	}
 	return size;
 }
@@ -52,11 +48,7 @@ int sendn(int fd, const char *buf, size_t len, int flag)
 		if (errno == EINTR)
 			return sendn(fd, buf, len, flag);
 		else
-		{
-			record_log("send data to ip:%s error\n", client_ip);
-			print_dbg(0, "send data to ip:%s error\n", client_ip);
 			return -errno;
-		}
 	}
 	else if (size < len)
 		return size + sendn(fd, buf + size, len - size, flag);
@@ -137,6 +129,19 @@ bool init_encrypt_method(char *method, size_t size, struct kmd_option *x)
 	return false;
 }
 
+int response_to_kmc(int sockfd, char ret, const char *err_info)
+{
+	char res[2];
+	res[0] = ret;
+	res[1] = '\n';
+	if (sendn(sockfd, res, 2, 0) < 0)
+	{
+		print_dbg(1, err_info);
+		return -1;
+	}
+	return 0;
+}
+
 bool verify_client(int sockfd, struct kmd_option *x)
 {
 	char buffer[20];
@@ -153,7 +158,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	 */
 	if ((len = recvn(sockfd, buffer, 20, 0)) < 0) // receive encrypt method
 	{
-		print_dbg(0, "receive connect protocol error\n");
+		print_dbg(0, "receive connect protocol from ip=%s error\n", client_ip);
 		return false;
 	}
 	if (!init_encrypt_method(buffer, 20, x))
@@ -175,30 +180,25 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	cipher[c_len + 1] = '\0';
 	if (sendn(sockfd, cipher, c_len + 1, 0) != c_len + 1)
 	{
-		print_dbg(0, "send random number error\n");
+		print_dbg(0, "send random number to ip=%s error\n", client_ip);
 		return false;
 	}
 
 	char receive[5];
 	if ((len = recvn(sockfd, receive, 5, 0)) < 0) //receive the plain number
 	{
-		print_dbg(0, "receive random number error\n");
+		print_dbg(0, "receive random number from ip=%s error\n", client_ip);
 		return false;
 	}
 	int m = atoi(receive);
 	print_dbg(1, "(random %d) (receive %d)\n", n, m);
 
-	char ret[2] =
-	{ 'Y', '\n' };
-	if (m != n)
-		ret[0] = 'Y';
-
-	print_dbg(1, "verify result(Y:succeed / N:failed): %s", ret);
-	if (ret[0] == 'N' || (len = sendn(sockfd, ret, 2, 0)) < 0)
-	{
-		print_dbg(1, "verify result error\n");
+	char ret = 'N';
+	if (m == n)
+		ret = 'Y';
+	print_dbg(1, "verify result(Y:succeed / N:failed): %c\n", ret);
+	if (-1 == response_to_kmc(sockfd, ret, "verify result error\n"))
 		return false;
-	}
 
 	/*
 	 *  below: KMC verify sa's identity
@@ -208,23 +208,23 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	 *  4. receive kmc's response (Y:succeed/N:fail)
 	 */
 	char num[200];
-	if ((len = recvn(sockfd, num, 200, 0)) < 0)
+	if ((len = recvn(sockfd, num, 200, 0)) < 0) // receive cipher
 	{
-		print_dbg(0, "receive kmc's cipher random number error\n");
+		print_dbg(0, "receive kmc(ip=%s) cipher random number error\n", client_ip);
 		return false;
 	}
 	char ans[50];
 	if (NULL == (*(en->decrypt))(num, ans, 50, x->sk_pathname))
 	{
-		print_dbg(0, "decrypt the kmc's random number error\n");
+		print_dbg(0, "decrypt the kmc(ip=%s) random number error\n", client_ip);
 		return false;
 	}
-	print_dbg(0, "the receive random number is %s\n", ans);
+	print_dbg(1, "the receive random number is %s\n", ans);
 	len = strlen(ans);
 	ans[len] = '\n';
 	if ((len = sendn(sockfd, ans, len + 1, 0)) < 0)
 	{
-		print_dbg(0, "send kmc random number error\n");
+		print_dbg(0, "send random number to ip=%s error\n", client_ip);
 		return false;
 	}
 	char r;
@@ -262,9 +262,8 @@ int rename_tempfile(const struct kmd_option *x)
 	return 0;
 }
 
-/**
- * judge if line is in the file
- */bool in_file(FILE *f, char *line)
+// judge if line is in the file
+bool in_file(FILE *f, char *line)
 {
 	bool tag = false;
 	if (-1 == fseek(f, 0, SEEK_SET))
@@ -275,6 +274,7 @@ int rename_tempfile(const struct kmd_option *x)
 	{
 		if (strstr(buf, line) != NULL )
 		{
+			print_dbg(1, "already have volume key : %s\n", line);
 			tag = true;
 			break;
 		}
@@ -311,23 +311,34 @@ int append_tempfile(const struct kmd_option *x)
 	return remove(x->temp_pathname);
 }
 
+/*
+ * receive data from kmc's process flow:
+ *   1. receive sha1 digest(28byte)
+ *   2. receive content's size(20byte, if less then 20, then filling in non-digit number)
+ *   3. calculate the loop receive times
+ *   4. receive the content and save them in tempt file
+ *   5. calculate the tempt file's sha1 digest
+ *   6. compare the two digest
+ *   7. response Y or N to KMC
+ *   8. if response is Y, append or replace the receive data
+ */
 int receive_volume_key(int sockfd, const struct kmd_option *x,
 		int (*puc)(const struct kmd_option *x))
 {
 	char buffer[LINE_MAX];
 	int data_len;
 	char digest[29];
-	// receive the data sha1 digest
+	// receive the data's sha1 digest
 	if ((data_len = recvn(sockfd, digest, 28, 0)) < 0)
 	{
-		record_log("receive data digest error\n", NULL );
-		print_dbg(0, "receive data digest error\n");
+		record_log("receive data digest from ip=%s error\n", client_ip);
+		print_dbg(0, "receive data digest from ip=%s error\n", client_ip);
 		return data_len;
 	}
 	digest[28] = '\0';
-	print_dbg(1, "digest=%s\n", digest);
+	print_dbg(1, "receive digest = %s\n", digest);
 
-	FILE *f;
+	FILE *f; // temp file to save the receive data
 	if ((f = fopen(x->temp_pathname, "w")) == NULL )
 	{
 		record_log("create temp file %s failed\n", x->temp_pathname);
@@ -335,8 +346,22 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 		return -1;
 	}
 
+	char size[20];
+	if ((data_len = recvn(sockfd, size, 20, 0)) < 0)
+	{
+		record_log("receive content size from ip%s error\n", client_ip);
+		remove(x->temp_pathname);
+		return -1;
+	}
+	long s = atol(size); // get the receive data length, and calculate the loop time
+	int count = s / LINE_MAX;
+
 	while ((data_len = recvn(sockfd, buffer, LINE_MAX, 0)) > 0)
+	{
 		fwrite(buffer, sizeof(char), data_len, f);
+		if (--count < 0)
+			break;
+	}
 	fclose(f);
 
 	if (data_len < 0) // receive data error
@@ -346,27 +371,27 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 		return data_len;
 	}
 
+	char ret = 'N';
 	char result[29];
-	if (NULL == (*(en->sha1))(x->temp_pathname, result, 30, x->pk_pathname))
+	if (NULL == (*(en->sha1))(x->temp_pathname, result, 29, x->pk_pathname))
 	{
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
-		return record_log("failed to calculate receive data's sha1 digest\n",
-				NULL );
+		record_log("failed to calculate receive data's sha1 digest\n", NULL );
+		goto RESPONSE;
 	}
-	print_dbg(1, "sha1=%s\n", result);
+	print_dbg(1, "calculate sha1 = %s\n", result);
 
-	char ret[2] =
-	{ 'Y', '\0' };
 	if (strcmp(digest, result) != 0)
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
 		record_log("receive data's integrity verify failed\n", NULL );
-		ret[0] = 'N';
+		goto RESPONSE;
 	}
-	if (sendn(sockfd, ret, 2, 0) < 0)
+	ret = 'Y';
+
+	RESPONSE: if (response_to_kmc(sockfd, ret, "receive data error") < 0
+			|| ret == 'N')
 	{
-		print_dbg(0, "response code error(ret=%c)\n", ret[0]);
-		record_log("response code error(ret=%c)\n", ret[0]);
 		remove(x->temp_pathname);
 		return -1;
 	}
@@ -374,6 +399,14 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 	return puc(x);
 }
 
+/*
+ * send data to kmc for backing up
+ *   1. calculate the key file's sha1 digest
+ *   2. send sha1 digest to kmc
+ *   3. read key file's data and send to kmc
+ *   4. send end tag "##end\n" to kmc
+ *   5. receive kmc's response(Y:succeed\N:failed)
+ */
 int send_volume_key(int sockfd, const struct kmd_option *x)
 {
 	FILE *f;
@@ -392,8 +425,8 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 
 	if (sendn(sockfd, result, 29, 0) < 0)
 	{
-		print_dbg(0, "send sha1 digest error\n");
-		return record_log("send sha1 digest error\n", NULL );
+		print_dbg(0, "send sha1 digest to ip=%s error\n", client_ip);
+		return record_log("send sha1 digest tp ip=%s error\n", client_ip);
 	}
 
 	if ((f = fopen(x->config_pathname, "r")) == NULL )
@@ -408,18 +441,20 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 		if ((size = sendn(sockfd, buffer, strlen(buffer), 0)) < 0)
 			break;
 	}
-
 	flock(fileno(f), LOCK_UN);
 	fclose(f);
 
 	if (sendn(sockfd, "##end\n", 6, 0) < 0)
-		return -1;
+	{
+		return record_log("send end tag to ip=%s failed\n", client_ip);
+	}
 
 	char ret;
 	if (recvn(sockfd, &ret, 1, 0) < 0 || ret != 'Y')
-		return record_log("kmc receive volume key error\n", NULL );
+		return record_log("kmc receive volume key from ip=%s error\n",
+				client_ip);
 
-	print_dbg(0, "kmc response(Y/N) = %c\n", ret);
+	print_dbg(1, "kmc response(Y/N) = %c\n", ret);
 	return size;
 }
 
@@ -428,31 +463,38 @@ void server_process(int sockfd, struct kmd_option *x)
 	int data_len = 0;
 	char cmd;
 
-	// receive and judge the client request
+	// receive and judge the kmc's request
 	data_len = recvn(sockfd, &cmd, 1, 0);
 	if (data_len < 0)
+	{
+		record_log("receive request from ip=%s error\n", client_ip);
 		return;
+	}
 
 	print_dbg(1, "command from ip=%s is \'%c\'\n", client_ip, cmd);
 	switch (cmd)
 	{
 	case 'A': // append to original file
-		receive_volume_key(sockfd, x, append_tempfile);
+		if(receive_volume_key(sockfd, x, append_tempfile) < 0)
+			record_log("%s: add request failed\n", client_ip);
+		else
+			record_log("%s: add request succeed\n", client_ip);
 		break;
 	case 'R': // receive file
-		receive_volume_key(sockfd, x, rename_tempfile);
+		if(receive_volume_key(sockfd, x, rename_tempfile) < 0)
+			record_log("%s: recover request failed\n", client_ip);
+		else
+			record_log("%s: recover request succeed\n", client_ip);
 		break;
 	case 'T': // send file
-		send_volume_key(sockfd, x);
+		if(send_volume_key(sockfd, x) < 0)
+			record_log("%s: backup request failed\n", client_ip);
+		else
+			record_log("%s: recover request succeed\n", client_ip);
 		break;
 	default:
 		record_log("command \'%c\' is illegal\n", (void *) cmd);
-		break;
 	}
-
-	print_dbg(2, "response client request over\n");
-	free(en);
-	en = NULL;
 }
 
 int busy = 0;
@@ -488,8 +530,6 @@ void server_work(int sockfd, struct kmd_option *x)
 						inet_ntoa(client_addr.sin_addr));
 			}
 		}
-		// record the client ip
-		strcpy(client_ip, inet_ntoa(client_addr.sin_addr));
 
 		if (busy == 1)
 		{
@@ -510,6 +550,8 @@ void server_work(int sockfd, struct kmd_option *x)
 		}
 		else if (0 == i)
 		{
+			// record the client ip
+			strcpy(client_ip, inet_ntoa(client_addr.sin_addr));
 			if (!verify_client(clientfd, x))
 			{
 				print_dbg(1,

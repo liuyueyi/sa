@@ -32,6 +32,8 @@ struct encrypt_operations * set_encryption_method(const char *method,
 		e->verify = rsa_verify;
 		e->sha1 = rsa_sha1;
 	}
+	else
+		goto err;
 	/*
 	 else if (strcmp(method, "sm") == 0 || strcmp(method, "SM") == 0)
 	 {

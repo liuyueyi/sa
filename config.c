@@ -25,11 +25,11 @@ char *get_column(char *line, int col)
 bool is_valid_column(const char *line, size_t len, const char *priv)
 {
 	char *ptr = NULL;
-	int priv_len = strlen(priv);
+	size_t priv_len = strlen(priv);
 	ptr = strstr(line, priv);
 	while (ptr)
 	{
-		if (strlen(ptr) != len && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
+		if (ptr != line && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
 			ptr = strstr(ptr + priv_len, priv);
 		else if (strlen(ptr) == priv_len || isspace(ptr[priv_len])
 				|| ',' == ptr[priv_len])
@@ -252,10 +252,10 @@ int remove_uuid(const char *line, char *result, size_t len, const char *id,
 		return 0;
 
 	char *ptr = strstr(line, uuid);
-	int u_len = strlen(uuid);
+	size_t u_len = strlen(uuid);
 	while (ptr)
 	{
-		if (strlen(ptr) != len && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
+		if (ptr != line && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
 			ptr = strstr(ptr + u_len, uuid);
 		else if (strlen(ptr) == u_len || isspace(ptr[u_len])
 				|| ',' == ptr[u_len])

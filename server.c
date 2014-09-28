@@ -197,7 +197,7 @@ bool verify_client(int sockfd, struct kmd_option *x)
 	if (m == n)
 		ret = 'Y';
 	print_dbg(1, "verify result(Y:succeed / N:failed): %c\n", ret);
-	if (-1 == response_to_kmc(sockfd, ret, "verify result error\n"))
+	if (-1 == response_to_kmc(sockfd, ret, "verify result error\n") || ret == 'N')
 		return false;
 
 	/*

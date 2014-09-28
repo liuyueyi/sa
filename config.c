@@ -21,22 +21,21 @@ char *get_column(char *line, int col)
 	return ptr;
 }
 
-/**
- * judge if the priv is the valid column of line
- */bool is_valid_column(const char *line, size_t len, const char *priv)
+// judge if the priv is the valid column of line
+bool is_valid_column(const char *line, size_t len, const char *priv)
 {
 	char *ptr = NULL;
+	int priv_len = strlen(priv);
 	ptr = strstr(line, priv);
 	while (ptr)
 	{
-		if (strlen(ptr) != strlen(line)
-				&& !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
-			ptr = strstr(ptr + strlen(priv), priv);
-		else if (strlen(ptr) == strlen(priv) || isspace(ptr[strlen(priv)])
-				|| ',' == ptr[strlen(priv)])
+		if (strlen(ptr) != len && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
+			ptr = strstr(ptr + priv_len, priv);
+		else if (strlen(ptr) == priv_len || isspace(ptr[priv_len])
+				|| ',' == ptr[priv_len])
 			return true;
 		else
-			ptr = strstr(ptr + strlen(priv), priv);
+			ptr = strstr(ptr + priv_len, priv);
 	}
 	return false;
 }
@@ -225,8 +224,8 @@ int print_key(const char *line, size_t len, const void *priv,
 	printf("\n");
 
 	/* 
-	printf("%s\n", result); 
-	*/
+	 printf("%s\n", result);
+	 */
 	return 1;
 }
 
@@ -248,14 +247,27 @@ int print_uuid(const char *line, size_t len, const void *priv, const void *ptr)
 int remove_uuid(const char *line, char *result, size_t len, const char *id,
 		const char *uuid)
 {
-	char *ptr = strstr(line, uuid);
-	int length = 0;
-	int tag = 0;
-	if (ptr == NULL )
+	int line_len = strlen(line);
+	if (!is_valid_column(line, line_len, uuid))
 		return 0;
 
+	char *ptr = strstr(line, uuid);
+	int u_len = strlen(uuid);
+	while (ptr)
+	{
+		if (strlen(ptr) != len && !(isspace(*(ptr-1)) || ',' == *(ptr - 1)))
+			ptr = strstr(ptr + u_len, uuid);
+		else if (strlen(ptr) == u_len || isspace(ptr[u_len])
+				|| ',' == ptr[u_len])
+			break;
+		else
+			ptr = strstr(ptr + u_len, uuid);
+	}
+
+	int length = 0;
+	int tag = 0;
 	int i = 0;
-	while (i < strlen(line))
+	while (i < line_len)
 	{
 		result[i++] = 0;
 	}
@@ -279,9 +291,7 @@ int add_uuid(const char *line, char *result, size_t len, const char *id,
 {
 	int line_len = strlen(line);
 	if (!is_valid_column(line, line_len, id) || line_len + strlen(uuid) >= len)
-	{
 		return 0;
-	}
 
 	int num = get_uuid_number(line);
 	if (num > UUID_MAX_NUM)
@@ -320,6 +330,10 @@ int remove_id(const char *line, char *result, size_t len, const char *id,
 int update_uuid(const char *line, char *result, size_t len, const char *id,
 		const char *uuid)
 {
+	if (is_valid_column(line, strlen(line), id)
+			&& is_valid_column(line, strlen(line), uuid))
+		return 0;
+
 	if (remove_uuid(line, result, len, NULL, uuid))
 		return 1;
 

@@ -414,6 +414,9 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 	char buffer[LINE_MAX];
 	char result[30];
 
+	if(x->no_verify) // no verify, do not calculate sha1
+		goto SEND;
+
 	// calculate and send sha1 digest for integrity verify
 	if (NULL == (*(en->sha1))(x->config_pathname, result, 30, x->pk_pathname))
 	{
@@ -429,6 +432,7 @@ int send_volume_key(int sockfd, const struct kmd_option *x)
 		return record_log("send sha1 digest tp ip=%s error\n", client_ip);
 	}
 
+	SEND:
 	if ((f = fopen(x->config_pathname, "r")) == NULL )
 	{
 		print_dbg(0, "%s volume key file not exist!\n", x->config_pathname);

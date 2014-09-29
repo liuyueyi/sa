@@ -270,9 +270,10 @@ bool in_file(FILE *f, char *line)
 		in_file(f, line);
 
 	char buf[LINE_MAX];
+	char *ptr;
 	while (fgets(buf, LINE_MAX, f))
 	{
-		if (strstr(buf, line) != NULL )
+		if ((ptr = strstr(buf, line) != NULL) && ptr == line)
 		{
 			print_dbg(1, "already have volume key : %s\n", line);
 			tag = true;
@@ -327,16 +328,19 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 {
 	char buffer[LINE_MAX];
 	int data_len;
-	char digest[29];
-	// receive the data's sha1 digest
-	if ((data_len = recvn(sockfd, digest, 28, 0)) < 0)
+	char digest[29]; // receive the data's sha1 digest
+
+	if(!x->no_verify)
 	{
-		record_log("receive data digest from ip=%s error\n", client_ip);
-		print_dbg(0, "receive data digest from ip=%s error\n", client_ip);
-		return data_len;
+		if ((data_len = recvn(sockfd, digest, 28, 0)) < 0)
+		{
+			record_log("receive data digest from ip=%s error\n", client_ip);
+			print_dbg(0, "receive data digest from ip=%s error\n", client_ip);
+			return data_len;
+		}
+		digest[28] = '\0';
+		print_dbg(1, "receive digest = %s\n", digest);
 	}
-	digest[28] = '\0';
-	print_dbg(1, "receive digest = %s\n", digest);
 
 	FILE *f; // temp file to save the receive data
 	if ((f = fopen(x->temp_pathname, "w")) == NULL )
@@ -371,12 +375,16 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 		return data_len;
 	}
 
-	char ret = 'N';
+	char ret = 'Y';
+	if(x->no_verify) // no verify, then no sha1
+		goto RESPONSE;
+
 	char result[29];
 	if (NULL == (*(en->sha1))(x->temp_pathname, result, 29, x->pk_pathname))
 	{
 		print_dbg(0, "failed to calculate receive data's sha1 digest\n");
 		record_log("failed to calculate receive data's sha1 digest\n", NULL );
+		ret = 'N';
 		goto RESPONSE;
 	}
 	print_dbg(1, "calculate sha1 = %s\n", result);
@@ -385,9 +393,9 @@ int receive_volume_key(int sockfd, const struct kmd_option *x,
 	{
 		print_dbg(0, "receive data's integrity verify failed\n");
 		record_log("receive data's integrity verify failed\n", NULL );
+		ret = 'N';
 		goto RESPONSE;
 	}
-	ret = 'Y';
 
 	RESPONSE: if (response_to_kmc(sockfd, ret, "receive data error") < 0
 			|| ret == 'N')

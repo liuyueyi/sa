@@ -68,6 +68,14 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 "),
 			stdout);
 	fputs(
+				("\
+  -n, --no_verify       connect sa server without identity verify\n\
+                        egg:\n\
+                          set original pathname = rsa_key.conf\n\
+                          kmd -c rsa_key.conf -n\n\
+	"),
+				stdout);
+	fputs(
 			("\
   -P, --pk_pathname     public key pathname\033[47;31m[default=kmc_pub.key]\033[0m\n\
                         egg:\n\

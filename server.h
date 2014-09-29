@@ -27,6 +27,7 @@ struct kmd_option
 {
 	uint16_t port;
 	bool debug;
+	bool no_verify;
 	int debug_level;
 	char ip[16];
 

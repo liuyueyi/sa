@@ -11,6 +11,7 @@ struct option const long_options[] =
 { "pk_pathname", required_argument, NULL, 'P' },
 { "help", no_argument, NULL, 'h' },
 { "debug", required_argument, NULL, 'd' },
+{ "no_verify", no_argument, NULL, "n"},
 { NULL, 0, NULL, 0 } };
 
 #define CONFIG_FILENAME "key.conf"
@@ -23,6 +24,7 @@ extern int dbg_level;
 void kmd_option_init(struct kmd_option *x)
 {
 	x->debug = false;
+	x->no_verify = false;
 	x->port = DEFAULT_PORT;
 	strcpy(x->ip, "INADDR_ANY");
 	strcpy(x->sk_pathname, SK_FILENAME);
@@ -98,7 +100,7 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 	int c;
 	while (1)
 	{
-		c = getopt_long_only(argc, argv, "i:p:C:P:S:", long_options, NULL );
+		c = getopt_long_only(argc, argv, "i:p:C:P:S:dn", long_options, NULL);
 		if (c == -1)
 			break;
 
@@ -151,6 +153,10 @@ void decode_switch(int argc, char **argv, struct kmd_option *x)
 			if (*optarg == '=')
 				++optarg;
 			dbg_level = atoi(optarg);
+			break;
+
+		case 'n':
+			x->no_verify = true;
 			break;
 
 		case '?':

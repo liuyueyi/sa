@@ -496,6 +496,7 @@ void server_process(int sockfd, struct kmd_option *x)
 		record_log("command \'%c\' is illegal\n", (void *) cmd);
 		break;
 	}
+	print_dbg(1, "command over\n");
 }
 
 int busy = 0;
@@ -553,7 +554,7 @@ void server_work(int sockfd, struct kmd_option *x)
 		{
 			// record the client ip
 			strcpy(client_ip, inet_ntoa(client_addr.sin_addr));
-			if (!verify_client(clientfd, x))
+			if (!x->no_verify && !verify_client(clientfd, x))
 			{
 				print_dbg(1,
 						"illegal ip:%s try to connect the server, and reject\n", client_ip);
